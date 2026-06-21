@@ -1,0 +1,23 @@
+# Tactical Portfolio Engine - Dependencies
+# Core web framework
+streamlit>=1.35.0
+
+# Data processing and analysis
+pandas>=2.2.0
+numpy>=1.26.0
+
+# Market data
+yfinance>=0.2.40
+tenacity>=9.0.0
+
+# Database
+sqlalchemy>=2.0.0,<3.0.0
+
+# Google Cloud Secret Manager
+google-cloud-secret-manager>=2.20.0
+google-api-core>=2.20.0
+
+# Optional: For development and testing
+# pytest>=7.0.0
+# black>=23.0.0
+# flake8>=6.0.0
