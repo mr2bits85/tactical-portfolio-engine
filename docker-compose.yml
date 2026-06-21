@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  tactical-portfolio-engine:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      # For local development, we set a default user email.
+      # In production, this would be set by the IAP header.
+      - DEV_USER_EMAIL=dev@example.com
+      # We can also set other environment variables for secrets here if needed.
+      # For example, if we have a secret named "TACTICAL_DATABASE_URL", we can set:
+      # - TACTICAL_DATABASE_URL=postgresql://user:password@host:port/database
+      # But note: the secret_manager.py first looks for the environment variable with the secret name.
+      # So we can set the secret values as environment variables for local testing.
+      # Uncomment and set the following as needed for your local environment:
+      # - TACTICAL_DATABASE_URL=your_database_url_here
+      # - API_KEY_NAME=your_api_key_here
+    # If you have a .env file, you can uncomment the following line:
+    # env_file:
+    #   - .env
+    restart: unless-stopped
