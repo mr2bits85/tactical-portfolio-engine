@@ -1,0 +1,343 @@
+/* Tactical Portfolio Engine - Custom Stylesheet */
+/* This file contains all custom styles for the Streamlit application */
+
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Base Styles */
+.stApp {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Header Styles */
+h1, h2, h3 {
+    color: #1f2937;
+    font-weight: 600;
+}
+
+/* Metric Styles */
+[data-testid="stMetric"] {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+[data-testid="stMetricLabel"] {
+    font-weight: 500;
+    color: #64748b;
+}
+
+[data-testid="stMetricValue"] {
+    font-weight: 600;
+    font-size: 1.5rem;
+}
+
+/* Button Styles */
+.stButton > button {
+    border-radius: 0.375rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.stButton > button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.stButton > button[kind="primary"] {
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+}
+
+.stButton > button[kind="primary"]:hover {
+    background-color: #2563eb;
+}
+
+/* Tab Styles */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 8px;
+}
+
+.stTabs [data-baseweb="tab"] {
+    height: 40px;
+    padding-left: 20px;
+    padding-right: 20px;
+    background-color: #f1f5f9;
+    border-radius: 0.375rem 0.375rem 0 0;
+    gap: 8px;
+}
+
+.stTabs [aria-selected="true"] {
+    background-color: #3b82f6;
+    color: white;
+}
+
+/* DataFrame Styles */
+[data-testid="stDataFrame"] {
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+/* Sidebar Styles */
+[data-testid="stSidebar"] {
+    background-color: #f8fafc;
+    border-right: 1px solid #e2e8f0;
+}
+
+[data-testid="stSidebar"] [data-testid="stSidebarNav"] {
+    background-color: transparent;
+}
+
+[data-testid="stSidebar"] .stButton > button {
+    width: 100%;
+    margin-bottom: 0.5rem;
+}
+
+/* Alert Styles */
+[data-testid="stAlert"] {
+    border-radius: 0.375rem;
+}
+
+/* Success Alert */
+[data-testid="stAlert"][kind="success"] {
+    background-color: #dcfce7;
+    border-color: #bbf7d0;
+    color: #166534;
+}
+
+/* Info Alert */
+[data-testid="stAlert"][kind="info"] {
+    background-color: #dbeafe;
+    border-color: #bfdbfe;
+    color: #1e40af;
+}
+
+/* Warning Alert */
+[data-testid="stAlert"][kind="warning"] {
+    background-color: #fef3c7;
+    border-color: #fde68a;
+    color: #92400e;
+}
+
+/* Error Alert */
+[data-testid="stAlert"][kind="error"] {
+    background-color: #fee2e2;
+    border-color: #fecaca;
+    color: #991b1b;
+}
+
+/* Expander Styles */
+[data-testid="stExpander"] {
+    border: 1px solid #e2e8f0;
+    border-radius: 0.375rem;
+    margin-bottom: 1rem;
+}
+
+[data-testid="stExpander"] [data-testid="stExpanderToggleIcon"] {
+    color: #64748b;
+}
+
+/* Text Input Styles */
+.stTextInput > div > div > input {
+    border-radius: 0.375rem;
+    border: 1px solid #d1d5db;
+    padding: 0.5rem 0.75rem;
+}
+
+.stTextInput > div > div > input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+}
+
+/* Select Box Styles */
+.stSelectbox > div > div > select {
+    border-radius: 0.375rem;
+    border: 1px solid #d1d5db;
+    padding: 0.5rem 0.75rem;
+}
+
+.stSelectbox > div > div > select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+}
+
+/* Multi-Select Styles */
+.stMultiSelect > div > div > div {
+    border-radius: 0.375rem;
+    border: 1px solid #d1d5db;
+}
+
+.stMultiSelect > div > div > div:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+}
+
+/* Slider Styles */
+.stSlider > div > div > div > div {
+    background-color: #3b82f6;
+}
+
+.stSlider > div > div > div > div > div {
+    background-color: white;
+    border: 2px solid #3b82f6;
+}
+
+/* Checkbox Styles */
+.stCheckbox > div > div > div {
+    border-radius: 0.375rem;
+    border: 1px solid #d1d5db;
+}
+
+.stCheckbox > div > div > div:hover {
+    border-color: #3b82f6;
+}
+
+.stCheckbox > div > div > div[data-checked="true"] {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+/* Radio Button Styles */
+.stRadio > div {
+    gap: 1rem;
+}
+
+.stRadio > div > label > div[role="radio"] {
+    border: 2px solid #d1d5db;
+    border-radius: 50%;
+    padding: 0.5rem;
+}
+
+.stRadio > div > label > div[role="radio"][aria-checked="true"] {
+    border-color: #3b82f6;
+    background-color: #3b82f6;
+}
+
+/* File Uploader Styles */
+.stFileUploader > div > div > div > div {
+    border: 2px dashed #d1d5db;
+    border-radius: 0.5rem;
+    padding: 2rem;
+    text-align: center;
+}
+
+.stFileUploader > div > div > div > div:hover {
+    border-color: #3b82f6;
+    background-color: #f8fafc;
+}
+
+/* Progress Bar Styles */
+.stProgress > div > div > div > div {
+    background-color: #3b82f6;
+    border-radius: 0.375rem;
+}
+
+/* Spinner Styles */
+.stSpinner > div > div {
+    border-color: #3b82f6 transparent transparent;
+    border-top-color: #3b82f6;
+}
+
+/* Toast Styles */
+[data-testid="stToast"] {
+    border-radius: 0.375rem;
+    font-weight: 500;
+}
+
+/* Custom Classes */
+.primary-button {
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.primary-button:hover {
+    background-color: #2563eb;
+    transform: translateY(-2px);
+}
+
+.secondary-button {
+    background-color: #f1f5f9;
+    color: #1f2937;
+    border: 1px solid #d1d5db;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.secondary-button:hover {
+    background-color: #e2e8f0;
+    transform: translateY(-2px);
+}
+
+.metric-card {
+    background-color: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+.metric-card:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+}
+
+.status-indicator::before {
+    content: "";
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.status-indicator.success::before {
+    background-color: #10b981;
+}
+
+.status-indicator.warning::before {
+    background-color: #f59e0b;
+}
+
+.status-indicator.error::before {
+    background-color: #ef4444;
+}
+
+.status-indicator.info::before {
+    background-color: #3b82f6;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .stApp {
+        padding: 1rem;
+    }
+
+    [data-testid="stColumn"] {
+        width: 100% !important;
+        flex: 1 1 100% !important;
+    }
+
+    [data-testid="stMetric"] {
+        margin-bottom: 1rem;
+    }
+}
