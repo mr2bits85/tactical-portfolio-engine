@@ -403,7 +403,7 @@ if market_state == "Bullish":
         st.metric(
             label="🎯 Secondary Stop / Target",
             value=f"${stop2:.2f}",
-            delta=f"-{(current_price-stop2)/current_price*100:.1f}%"
+            delta=f"-{(tqqq_price-stop2)/tqqq_price*100:.1f}%"
         )
         st.caption("Trailing stop or profit target at 230-day EMA or 10% below price")
 
