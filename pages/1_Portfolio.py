@@ -72,10 +72,10 @@ with tab1:
         'Avg Cost': [150.00, 280.00, 2200.00],
         'Current Price': [175.50, 305.25, 2450.75],
         'Market Value': [17550.00, 15262.50, 61268.75],
-        'P/L': [$2550.00, $1262.50, $6268.75],
-        'P/L %': [+16.7%, +8.9%, +11.4%]
+        'P/L': ['$2550.00', '$1262.50', '$6268.75'],
+        'P/L %': ['+16.7%', '+8.9%', '+11.4%']
     })
-    st.dataframe(sample_holdings, use_container_width=True)
+    st.dataframe(sample_holdings, width='stretch')
 
 with tab2:
     st.subheader("Tax-Lot Details")
@@ -90,11 +90,11 @@ with tab2:
         'Purchase Price': [145.00, 155.00, 275.00],
         'Current Price': [175.50, 175.50, 305.25],
         'Market Value': [8775.00, 8775.00, 15262.50],
-        'P/L': [$1525.00, $1025.00, $1512.50],
-        'P/L %': [+10.5%, +6.6%, +5.5%],
+        'P/L': ['$1525.00', '$1025.00', '$1512.50'],
+        'P/L %': ['+10.5%', '+6.6%', '+5.5%'],
         'Holding Period': ['Long-term', 'Long-term', 'Long-term']
     })
-    st.dataframe(sample_lots, use_container_width=True)
+    st.dataframe(sample_lots, width='stretch')
 
 with tab3:
     st.subheader("Drift Indicators")
@@ -109,7 +109,7 @@ with tab3:
         'Difference': [-0.001, +0.001, 0.000],
         'Status': ['✅ Within Threshold', '✅ Within Threshold', '✅ Within Threshold']
     })
-    st.dataframe(sample_drift, use_container_width=True)
+    st.dataframe(sample_drift, width='stretch')
 
 # Footer
 st.markdown("---")

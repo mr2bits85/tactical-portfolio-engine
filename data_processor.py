@@ -8,7 +8,7 @@ from typing import List, Dict, Any
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
-from .models import TransactionLots, PortfolioSnapshots
+from models import TransactionLots, PortfolioSnapshots
 
 logger = logging.getLogger(__name__)
 

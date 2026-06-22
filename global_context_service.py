@@ -8,8 +8,8 @@ from datetime import datetime
 
 from sqlalchemy.orm import Session
 
-from .market_data_service import MarketDataService
-from .models import MarketRegime
+from market_data_service import MarketDataService
+from models import MarketRegime
 
 logger = logging.getLogger(__name__)
 

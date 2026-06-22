@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Tuple
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 
-from .models import TransactionLots, SystemNotifications
+from models import TransactionLots, SystemNotifications
 
 logger = logging.getLogger(__name__)
 
@@ -166,7 +166,7 @@ class DriftEngine:
             notification = SystemNotifications(
                 category="data_discrepancy",
                 is_resolved=False,
-                metadata={
+                notification_metadata={
                     "account_id": account_id,
                     "symbol": symbol,
                     "quantity_difference": quantity_diff,

@@ -5,7 +5,7 @@ Provides decorators and context managers for isolating failures in batch process
 """
 import logging
 import time
-from typing import Callable, List, Any, TypeVar, Generic, Optional
+from typing import Callable, List, Any, TypeVar, Generic, Optional, Dict
 from functools import wraps
 
 logger = logging.getLogger(__name__)

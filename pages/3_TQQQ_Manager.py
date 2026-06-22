@@ -268,7 +268,7 @@ try:
     # Display recommendation
     action_col1, action_col2, action_col3 = st.columns(3)
     with action_col1:
-        if st.button("📈 BUY", type="primary", use_container_width=True,
+        if st.button("📈 BUY", type="primary", width='stretch',
                     disabled=(action != "BUY")):
             if action == "BUY":
                 st.success("Buy signal executed!")
@@ -277,14 +277,14 @@ try:
             else:
                 st.error(f"Not recommended: {action}")
     with action_col2:
-        if st.button("⏸️ HOLD", use_container_width=True,
+        if st.button("⏸️ HOLD", width='stretch',
                     disabled=(action != "HOLD")):
             if action == "HOLD":
                 st.info("Hold position maintained")
             else:
                 st.error(f"Not recommended: {action}")
     with action_col3:
-        if st.button("📉 SELL", use_container_width=True,
+        if st.button("📉 SELL", width='stretch',
                     disabled=(action != "SELL")):
             if action == "SELL":
                 st.warning("Sell signal executed!")
@@ -403,7 +403,7 @@ if market_state == "Bullish":
 
 elif market_state == "Cautious":
     # Cautious states showing one stop/half-out alert
-    st.write#### 🟡 Cautious State Components")
+    st.write("#### 🟡 Cautious State Components")
 
     alert_col, stop_col = st.columns([1, 1])
 

@@ -5,6 +5,8 @@ Admin controls and System Health.
 import streamlit as st
 import sys
 import os
+from datetime import datetime
+import pandas as pd
 
 # Add the project root to the path so we can import our modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -12,7 +14,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Import our services
 from auth import get_current_user
 from secret_manager import get_secret
-import pandas as pd
+from models import TickerMappings
 
 # Page configuration
 st.set_page_config(
@@ -55,7 +57,11 @@ if not is_admin:
     st.warning("🔒 Administrator access required for this page.")
     st.info("Please contact your system administrator for access to settings.")
 else:
-    tab1, tab2, tab3 = st.tabs(["🔧 System Settings", "🔐 API Keys", "💾 Database"])
+    # Initialize session state for mapping form
+    if 'show_add_mapping' not in st.session_state:
+        st.session_state.show_add_mapping = False
+
+    tab1, tab2, tab3, tab4 = st.tabs(["🔧 System Settings", "🔐 API Keys", "💾 Database", "🔄 Symbol Mappings"])
 
     with tab1:
         st.subheader("System Configuration")
@@ -84,7 +90,7 @@ else:
             st.checkbox("Enable Data Export", value=True)
             st.checkbox("Enable Backtesting", value=False)
 
-        if st.button("💾 Save Settings", type="primary", use_container_width=False):
+        if st.button("💾 Save Settings", type="primary", width='content'):
             st.success("Settings saved successfully!")
 
     with tab2:
@@ -99,7 +105,7 @@ else:
             'Last Updated': ['2023-06-10', 'Never', '2023-06-15', 'Never'],
             'Usage': ['Low', 'None', 'Medium', 'None']
         })
-        st.dataframe(api_keys_data, use_container_width=True)
+        st.dataframe(api_keys_data, width='stretch')
 
         # Add/Update API Key
         with st.expander("➕ Add/Update API Key", expanded=False):
@@ -118,10 +124,10 @@ else:
         st.subheader("Test API Connections")
         test_col1, test_col2 = st.columns(2)
         with test_col1:
-            if st.button("🔬 Test Yahoo Finance", use_container_width=True):
+            if st.button("🔬 Test Yahoo Finance", width='stretch'):
                 st.success("Yahoo Finance connection successful!")
         with test_col2:
-            if st.button("🔬 Test All Connections", use_container_width=True):
+            if st.button("🔬 Test All Connections", width='stretch'):
                 st.info("Testing all API connections...")
                 st.success("All connections tested successfully!")
 
@@ -136,7 +142,7 @@ else:
             'Property': ['Host', 'Port', 'Database Name', 'Username', 'Connection Status'],
             'Value': ['localhost', '5432', 'tactical_portfolio_db', 'app_user', '✅ Connected']
         })
-        st.dataframe(db_info, use_container_width=True)
+        st.dataframe(db_info, width='stretch')
 
         # Pool settings
         st.write("### Connection Pool Settings")
@@ -152,18 +158,125 @@ else:
         st.write("### Maintenance Tasks")
         maintenance_col1, maintenance_col2 = st.columns(2)
         with maintenance_col1:
-            if st.button("🧹 Clean Old Logs", use_container_width=True):
+            if st.button("🧹 Clean Old Logs", width='stretch'):
                 st.success("Old logs cleaned successfully!")
-            if st.button("📊 Update Statistics", use_container_width=True):
+            if st.button("📊 Update Statistics", width='stretch'):
                 st.success("Database statistics updated!")
         with maintenance_col2:
-            if st.button("🔄 Rebuild Indexes", use_container_width=True):
+            if st.button("🔄 Rebuild Indexes", width='stretch'):
                 st.success("Indexes rebuilt successfully!")
-            if st.button("💾 Backup Database", use_container_width=True):
+            if st.button("💾 Backup Database", width='stretch'):
                 st.success("Database backup initiated!")
 
-        if st.button("💾 Save Database Settings", type="primary", use_container_width=False):
+        if st.button("💾 Save Database Settings", type="primary", width='content'):
             st.success("Database settings saved successfully!")
+
+    with tab4:
+        st.subheader("🔄 Symbol Translation Overrides")
+        st.info("Manage global symbol translation overrides for the ticker_mappings master table")
+
+        # Symbol Mappings Management
+        st.write("### Current Symbol Mappings")
+
+        # Sample data for demonstration - in a real app, this would come from the database
+        sample_mappings = pd.DataFrame({
+            'ID': [1, 2, 3, 4, 5],
+            'Broker Name': ['Fidelity', 'E-Trade', 'Charles Schwab', 'TD Ameritrade', 'Interactive Brokers'],
+            'Raw Symbol (Broker)': ['AAPL.Z', 'MSFT.OQ', 'GOOGL.OQ', 'TSLA', 'NVDA'],
+            'Provider Symbol': ['AAPL', 'MSFT', 'GOOGL', 'TSLA', 'NVDA'],
+            'Created': ['2023-06-10', '2023-06-12', '2023-06-13', '2023-06-14', '2023-06-15'],
+            'Actions': ['Edit', 'Edit', 'Edit', 'Edit', 'Edit']
+        })
+
+        # Display the mappings table
+        edited_mappings = st.data_editor(
+            sample_mappings,
+            width='stretch',
+            hide_index=True,
+            column_config={
+                "ID": st.column_config.NumberColumn("ID", width="small"),
+                "Broker Name": st.column_config.TextColumn("Broker Name", width="medium"),
+                "Raw Symbol (Broker)": st.column_config.TextColumn("Raw Symbol", width="medium"),
+                "Provider Symbol": st.column_config.TextColumn("Provider Symbol", width="medium"),
+                "Created": st.column_config.DateColumn("Created", width="small"),
+                "Actions": st.column_config.TextColumn("Actions", width="small")
+            },
+            disabled=["ID", "Broker Name", "Raw Symbol (Broker)", "Provider Symbol", "Created"]
+        )
+
+        # Action buttons for mappings
+        st.write("### Actions")
+        action_col1, action_col2, action_col3, action_col4 = st.columns(4)
+        with action_col1:
+            if st.button("➕ Add New Mapping", type="primary", width='stretch'):
+                st.session_state.show_add_mapping = True
+        with action_col2:
+            if st.button("📥 Export to CSV", width='stretch'):
+                st.success("Symbol mappings exported to CSV!")
+        with action_col3:
+            if st.button("📤 Import from CSV", width='stretch'):
+                st.success("Symbol mappings imported from CSV!")
+        with action_col4:
+            if st.button("🗑️ Clear All Mappings", type="secondary", width='stretch'):
+                st.warning("This action cannot be undone!")
+
+        # Add New Mapping Form
+        if st.session_state.get('show_add_mapping', False):
+            st.write("### Add New Symbol Mapping")
+            with st.form("add_mapping_form", clear_on_submit=True):
+                form_col1, form_col2 = st.columns(2)
+                with form_col1:
+                    broker_name = st.selectbox(
+                        "Broker Name",
+                        ["Fidelity", "E-Trade", "Charles Schwab", "TD Ameritrade", "Interactive Brokers", "Other"],
+                        key="add_broker"
+                    )
+                    if broker_name == "Other":
+                        broker_name = st.text_input("Custom Broker Name", key="custom_broker")
+
+                    raw_symbol = st.text_input(
+                        "Raw Symbol (Broker Format)",
+                        placeholder="e.g., AAPL.Z, MSFT.OQ",
+                        help="Symbol format as received from the broker"
+                    )
+                with form_col2:
+                    provider_symbol = st.text_input(
+                        "Provider Symbol (Standard Format)",
+                        placeholder="e.g., AAPL, MSFT",
+                        help="Standardized symbol format for data providers"
+                    )
+                    notes = st.text_area(
+                        "Notes (Optional)",
+                        placeholder="Additional context about this mapping",
+                        height=100
+                    )
+
+                form_col3, form_col4 = st.columns([1, 1])
+                with form_col3:
+                    submit_button = st.form_submit_button("Add Mapping", type="primary", width='stretch')
+                with form_col4:
+                    cancel_button = st.form_submit_button("Cancel", type="secondary", width='stretch')
+
+                if cancel_button:
+                    st.session_state.show_add_mapping = False
+                    st.rerun()
+
+                if submit_button and broker_name and raw_symbol and provider_symbol:
+                    # In a real implementation, we would save to the database here
+                    # new_mapping = TickerMappings(
+                    #     broker_name=broker_name,
+                    #     raw_symbol=raw_symbol,
+                    #     provider_symbol=provider_symbol
+                    # )
+                    # db.session.add(new_mapping)
+                    # db.session.commit()
+
+                    st.success(f"✅ Symbol mapping added: {broker_name} - {raw_symbol} → {provider_symbol}")
+                    st.session_state.show_add_mapping = False
+                    st.balloons()
+                    st.rerun()
+                elif submit_button:
+                    st.error("Please fill in all required fields: Broker Name, Raw Symbol, and Provider Symbol")
 
 # Footer (shown for all users)
 st.markdown("---")

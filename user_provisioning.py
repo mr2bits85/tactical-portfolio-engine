@@ -9,7 +9,7 @@ from typing import Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
-from .models import Users
+from models import Users
 
 logger = logging.getLogger(__name__)
 

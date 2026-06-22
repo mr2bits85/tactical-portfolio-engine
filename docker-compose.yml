@@ -1,23 +1,34 @@
-version: '3.8'
-
 services:
+  # 1. The Local Test Database (Only exists on your laptop)
+  tactical-db:
+    image: postgres:15-alpine
+    container_name: tactical_portfolio_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: portfolio_user
+      POSTGRES_PASSWORD: local_password123
+      POSTGRES_DB: portfolio_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+
+  # 2. Your Application (Reads from the local DB)
   tactical-portfolio-engine:
     build: .
+    container_name: tactical_portfolio_app
     ports:
       - "8501:8501"
     environment:
-      # For local development, we set a default user email.
-      # In production, this would be set by the IAP header.
       - DEV_USER_EMAIL=dev@example.com
-      # We can also set other environment variables for secrets here if needed.
-      # For example, if we have a secret named "TACTICAL_DATABASE_URL", we can set:
-      # - TACTICAL_DATABASE_URL=postgresql://user:password@host:port/database
-      # But note: the secret_manager.py first looks for the environment variable with the secret name.
-      # So we can set the secret values as environment variables for local testing.
-      # Uncomment and set the following as needed for your local environment:
-      # - TACTICAL_DATABASE_URL=your_database_url_here
-      # - API_KEY_NAME=your_api_key_here
-    # If you have a .env file, you can uncomment the following line:
-    # env_file:
-    #   - .env
+      # Point your app directly to the local 'tactical-db' container service
+      - TACTICAL_DATABASE_URL=postgresql://portfolio_user:local_password123@tactical-db:5432/portfolio_dev
+    volumes:
+      - .:/app
+    depends_on:
+      - tactical-db
     restart: unless-stopped
+
+# This must be at the very bottom, completely flush to the left edge (0 spaces)
+volumes:
+  postgres_test_data:

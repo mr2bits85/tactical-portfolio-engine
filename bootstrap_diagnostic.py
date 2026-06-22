@@ -15,7 +15,7 @@ try:
 except ImportError:
     _yfinance_available = False
 
-from .models import SystemNotifications
+from models import SystemNotifications
 
 logger = logging.getLogger(__name__)
 

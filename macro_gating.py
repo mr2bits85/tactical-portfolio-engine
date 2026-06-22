@@ -4,12 +4,12 @@ across the platform if anchor data is stale or failed.
 """
 import logging
 import time
-from typing import Callable, Any, Optional, List
+from typing import Callable, Any, Optional, List, Dict
 from functools import wraps
 
 from sqlalchemy.orm import Session
 
-from .global_context_service import GlobalContextService
+from global_context_service import GlobalContextService
 
 logger = logging.getLogger(__name__)
 

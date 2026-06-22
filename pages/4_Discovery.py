@@ -84,19 +84,19 @@ with tab1:
     })
 
     if not sample_watchlist.empty:
-        st.dataframe(sample_watchlist, use_container_width=True)
+        st.dataframe(sample_watchlist, width='stretch')
 
         # Watchlist actions
         st.subheader("Watchlist Actions")
         action_col1, action_col2, action_col3 = st.columns(3)
         with action_col1:
-            if st.button("🔄 Refresh Prices", use_container_width=True):
+            if st.button("🔄 Refresh Prices", width='stretch'):
                 st.success("Watchlist prices refreshed!")
         with action_col2:
-            if st.button("📊 Analyze Watchlist", use_container_width=True):
+            if st.button("📊 Analyze Watchlist", width='stretch'):
                 st.info("Running analysis on watchlist symbols...")
         with action_col3:
-            if st.button("🗑️ Clear Watchlist", use_container_width=True):
+            if st.button("🗑️ Clear Watchlist", width='stretch'):
                 st.warning("Watchlist cleared!")
     else:
         st.info("Your watchlist is empty. Add symbols to get started.")
@@ -109,7 +109,7 @@ with tab2:
     with search_col1:
         symbol_to_analyze = st.text_input("Enter Symbol to Analyze (e.g., AAPL)", placeholder="AAPL").upper()
     with search_col2:
-        analyze_button = st.button("Analyze", type="primary", use_container_width=True)
+        analyze_button = st.button("Analyze", type="primary", width='stretch')
 
     if analyze_button and symbol_to_analyze:
         with st.spinner(f"Analyzing {symbol_to_analyze}..."):
@@ -127,17 +127,17 @@ with tab2:
                     'Value': [65.2, 'Bullish Cross', 165.20, 155.80, 'Above Avg'],
                     'Signal': ['Neutral', 'Bullish', 'Bullish', 'Bullish', 'Strong']
                 })
-                st.dataframe(tech_data, use_container_width=True)
+                st.dataframe(tech_data, width='stretch')
 
             with analysis_tab2:
                 st.write("### Fundamental Analysis")
                 # Sample fundamental data
                 fund_data = pd.DataFrame({
                     'Metric': ['P/E Ratio', 'Forward P/E', 'PEG Ratio', 'Dividend Yield', 'Market Cap'],
-                    'Value': [28.5, 24.3, 1.8, 0.5%, '$2.8T'],
+                    'Value': ['28.5', '24.3', '1.8', '0.5%', '$2.8T'],
                     'Assessment': ['Fairly Valued', 'Reasonable', 'Acceptable', 'Low', 'Large Cap']
                 })
-                st.dataframe(fund_data, use_container_width=True)
+                st.dataframe(fund_data, width='stretch')
 
             with analysis_tab3:
                 st.write("### Strategy Analysis")
@@ -150,10 +150,10 @@ with tab2:
                 # Strategy actions
                 action_col1, action_col2 = st.columns(2)
                 with action_col1:
-                    if st.button("📝 Add to Watchlist", use_container_width=True):
+                    if st.button("📝 Add to Watchlist", width='stretch'):
                         st.success(f"{symbol_to_analyze} added to watchlist!")
                 with action_col2:
-                    if st.button("📋 Create Alert", use_container_width=True):
+                    if st.button("📋 Create Alert", width='stretch'):
                         st.success(f"Price alert created for {symbol_to_analyze}!")
 
 # Footer

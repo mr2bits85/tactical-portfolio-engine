@@ -1,4 +1,4 @@
-from sqlalchemy import Integer, String, Float, DateTime, Date, Boolean, Text, JSON
+from sqlalchemy import Integer, String, Float, DateTime, Date, Boolean, Text, JSON, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from typing import Optional
 import datetime
@@ -216,5 +216,5 @@ class SystemNotifications(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     category: Mapped[str] = mapped_column(String(100), nullable=False)  # e.g., 'provider_fetch_failed', 'unmapped_symbol', 'data_discrepancy'
     is_resolved: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    metadata: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # JSONB for flexible metadata
+    notification_metadata: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # JSONB for flexible metadata
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, server_default=func.now())

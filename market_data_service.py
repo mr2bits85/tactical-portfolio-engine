@@ -17,7 +17,7 @@ except ImportError:
     _yfinance_available = False
     _tenacity_available = False
 
-from .models import TickerPricesLive, TickerIndicators, TickerMetadata
+from models import TickerPricesLive, TickerIndicators, TickerMetadata
 
 logger = logging.getLogger(__name__)
 
