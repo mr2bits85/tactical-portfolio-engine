@@ -39,7 +39,7 @@ current_user = get_current_user()
 
 # Page header
 st.title("📊 TQQQ Manager")
-st.caption("Dynamic 3-tier EMA strategy dashboard")
+st.caption("Dynamic 3-tier EMA strategy dashboard (based on QQQ)")
 
 # User info
 if current_user:
@@ -66,94 +66,106 @@ def get_services():
 try:
     strategy_service = get_services()
 
-    # Fetch real-time data and calculate EMAs
-    with st.spinner("Fetching real-time TQQQ data and calculating EMAs..."):
+    # Fetch real-time data and calculate EMAs based on QQQ, display TQQQ price
+    with st.spinner("Fetching real-time QQQ data for EMA/ADX and TQQQ price..."):
         # In a real implementation, we would use MarketDataService to get data
-        # For this example, we'll simulate real-time data calculation
+        # For this example, we'll simulate real-time data calculation using yfinance directly
 
-        # Get historical data for EMA calculation (using yfinance directly for demo)
         try:
             import yfinance as yf
 
-            # Fetch TQQQ data
+            # Fetch QQQ data for EMA and ADX calculations
+            qqq_ticker = yf.Ticker("QQQ")
+            # Get enough data for 230-day EMA calculation and ADX
+            qqq_hist_data = qqq_ticker.history(period="1y")  # 1 year of data
+
+            # Fetch TQQQ data for current price display
             tqqq_ticker = yf.Ticker("TQQQ")
+            tqqq_hist_data = tqqq_ticker.history(period="5d")  # recent days for latest price
 
-            # Get enough data for 230-day EMA calculation
-            hist_data = tqqq_ticker.history(period="1y")  # 1 year of data
+            if not qqq_hist_data.empty and not tqqq_hist_data.empty:
+                # Calculate EMAs on QQQ close prices
+                qqq_close = qqq_hist_data['Close']
+                ema_45 = qqq_close.ewm(span=45, adjust=False).mean().iloc[-1]
+                ema_230 = qqq_close.ewm(span=230, adjust=False).mean().iloc[-1]
+                # price change percentage for QQQ (for reference)
+                qqq_price = qqq_close.iloc[-1]
+                qqq_prev_close = qqq_close.iloc[-2] if len(qqq_close) > 1 else qqq_price
+                qqq_price_change_pct = ((qqq_price - qqq_prev_close) / qqq_prev_close) * 100
 
-            if not hist_data.empty:
-                # Calculate EMAs
-                close_prices = hist_data['Close']
-                ema_45 = close_prices.ewm(span=45, adjust=False).mean().iloc[-1]
-                ema_230 = close_prices.ewm(span=230, adjust=False).mean().iloc[-1]
-                current_price = close_prices.iloc[-1]
-
-                # Calculate price change percentage
-                prev_close = close_prices.iloc[-2] if len(close_prices) > 1 else close_prices.iloc[-1]
-                price_change_pct = ((current_price - prev_close) / prev_close) * 100
-
-                # Calculate EMA changes (approximate)
-                ema_45_prev = close_prices.ewm(span=45, adjust=False).mean().iloc[-2] if len(close_prices) > 1 else ema_45
-                ema_230_prev = close_prices.ewm(span=230, adjust=False).mean().iloc[-2] if len(close_prices) > 1 else ema_230
+                # Calculate EMA changes (approximate) for QQQ
+                ema_45_prev = qqq_close.ewm(span=45, adjust=False).mean().iloc[-2] if len(qqq_close) > 1 else ema_45
+                ema_230_prev = qqq_close.ewm(span=230, adjust=False).mean().iloc[-2] if len(qqq_close) > 1 else ema_230
                 ema_45_change_pct = ((ema_45 - ema_45_prev) / ema_45_prev) * 100 if ema_45_prev != 0 else 0
                 ema_230_change_pct = ((ema_230 - ema_230_prev) / ema_230_prev) * 100 if ema_230_prev != 0 else 0
 
-                # Calculate exposure tier: sum of active EMA signals
+                # Calculate exposure tier: sum of active EMA signals based on QQQ price vs EMA
                 # Tier 0: price <= EMA45 AND price <= EMA230 -> 0 signals
                 # Tier 1: price > EMA45 XOR price > EMA230 -> 1 signal
                 # Tier 2: price > EMA45 AND price > EMA230 -> 2 signals
                 active_signals = 0
-                if current_price > ema_45:
+                if qqq_price > ema_45:
                     active_signals += 1
-                if current_price > ema_230:
+                if qqq_price > ema_230:
                     active_signals += 1
 
                 # Use active_signals as the exposure tier (0, 1, or 2)
                 exposure_tier = active_signals
 
+                # TQQQ price and change
+                tqqq_price = tqqq_hist_data['Close'].iloc[-1]
+                tqqq_prev = tqqq_hist_data['Close'].iloc[-2] if len(tqqq_hist_data) > 1 else tqqq_price
+                tqqq_price_change_pct = ((tqqq_price - tqqq_prev) / tqqq_prev) * 100
+
                 # Get ADX for filtering (simplified - in reality would calculate properly)
                 # For demo, we'll use a placeholder or try to calculate
+                # We'll leave as placeholder for now.
                 adx_value = 25  # Placeholder - would calculate from DMI in real implementation
 
             else:
                 # Fallback to placeholder data if unable to fetch
-                raise Exception("Unable to fetch historical data")
+                raise Exception("Unable to fetch QQQ/TQQQ historical data")
 
         except Exception as e:
             # Fallback to reasonable placeholder values if real data fetch fails
             st.warning(f"Using placeholder data due to: {str(e)}. In production, this would use real market data.")
-            current_price = 45.20
+            # TQQQ price placeholders
+            tqqq_price = 45.20
+            tqqq_price_change_pct = 2.1
+            # QQQ placeholders for EMA etc.
+            qqq_price = 0.0   # QQQ price placeholder
             ema_45 = 44.80
             ema_230 = 42.50
-            price_change_pct = 2.1
+            # QQQ price change percentage reference (not used in display)
+            qqq_price_change_pct = 0.9
             ema_45_change_pct = 0.9
             ema_230_change_pct = 6.4
             # Calculate exposure tier based on fallback values
             active_signals = 0
-            if current_price > ema_45:
+            if qqq_price > ema_45:  # this will be false
                 active_signals += 1
-            if current_price > ema_230:
+            if qqq_price > ema_230:  # false
                 active_signals += 1
             exposure_tier = active_signals
             adx_value = 25
 
-    # Display real-time metrics
+    # Display real-time metrics: TQQQ price (from TQQQ), EMA values from QQQ
     col1, col2, col3 = st.columns(3)
     with col1:
         st.metric(
             "TQQQ Price",
-            f"${current_price:.2f}",
-            f"{price_change_pct:+.1f}%"
+            f"${tqqq_price:.2f}",
+            f"{tqqq_price_change_pct:+.1f}%"
         )
     with col2:
         st.metric(
-            "45-Day EMA",
+            "45-Day EMA (QQQ)",
             f"${ema_45:.2f}",
             f"{ema_45_change_pct:+.1f}%"
         )
     with col3:
         st.metric(
-            "230-Day EMA",
+            "230-Day EMA (QQQ)",
             f"${ema_230:.2f}",
             f"{ema_230_change_pct:+.1f}%"
         )
@@ -194,32 +206,32 @@ try:
             f"{active_signals} active signals" if tier_2_active else "Price below both or above only one EMA"
         )
 
-    # EMA Crossover Chart with real data
-    st.subheader("📈 EMA Crossover Chart (Real Data)")
-    if 'hist_data' in locals() and not hist_data.empty:
+    # EMA Crossover Chart with real data (based on QQQ)
+    st.subheader("📈 EMA Crossover Chart (QQQ)")
+    if 'qqq_hist_data' in locals() and not qqq_hist_data.empty:
         # Prepare chart data with calculated EMAs
         chart_data = pd.DataFrame({
-            'Date': hist_data.index,
-            'TQQQ': hist_data['Close'],
-            'EMA_45': hist_data['Close'].ewm(span=45, adjust=False).mean(),
-            'EMA_230': hist_data['Close'].ewm(span=230, adjust=False).mean()
+            'Date': qqq_hist_data.index,
+            'QQQ': qqq_hist_data['Close'],
+            'EMA_45': qqq_hist_data['Close'].ewm(span=45, adjust=False).mean(),
+            'EMA_230': qqq_hist_data['Close'].ewm(span=230, adjust=False).mean()
         })
-        st.line_chart(chart_data.set_index('Date')[['TQQQ', 'EMA_45', 'EMA_230']])
+        st.line_chart(chart_data.set_index('Date')[['QQQ', 'EMA_45', 'EMA_230']])
     else:
         # Sample chart data as fallback
         chart_data = pd.DataFrame({
             'Date': pd.date_range(start='2023-01-01', end='2023-06-21', freq='D'),
-            'TQQQ': np.random.randn(172).cumsum() + 40,
+            'QQQ': np.random.randn(172).cumsum() + 40,
             'EMA_45': np.random.randn(172).cumsum() + 38,
             'EMA_230': np.random.randn(172).cumsum() + 35
         })
-        st.line_chart(chart_data.set_index('Date')[['TQQQ', 'EMA_45', 'EMA_230']])
-        st.info("Showing sample data - in production would display real TQQQ EMA data")
+        st.line_chart(chart_data.set_index('Date')[['QQQ', 'EMA_45', 'EMA_230']])
+        st.info("Showing sample data - in production would display real QQQ EMA data")
 
-    # Action buttons based on TQQQ rules
-    st.subheader("⚡ Recommended Action (Based on TQQQ Rules)")
+    # Action buttons based on QQQ signals
+    st.subheader("⚡ Recommended Action (Based on QQQ Signals)")
 
-    # Determine recommendation based on TQQQ rules from legacy logic
+    # Determine recommendation based on QQQ signals from legacy logic
     # Trend Breakdown: active_signals < current_tier -> SELL
     # Wait (Filtered Uptrend): active_signals > current_tier AND ADX < 20 -> WAIT
     # Trend Up + Strong ADX: active_signals > current_tier AND ADX >= 20 -> BUY
@@ -300,11 +312,11 @@ try:
     st.subheader("📋 Active TQQQ Rules Context")
     st.write(f"""
     **Current Calculation**:
-    - TQQQ Price: ${current_price:.2f}
-    - 45-Day EMA: ${ema_45:.2f} (Price > EMA45: {'YES' if current_price > ema_45 else 'NO'})
-    - 230-Day EMA: ${ema_230:.2f} (Price > EMA230: {'YES' if current_price > ema_230 else 'NO'})
+    - TQQQ Price: ${tqqq_price:.2f}
+    - 45-Day EMA (QQQ): ${ema_45:.2f} (QQQ Price > EMA45: {'YES' if qqq_price > ema_45 else 'NO'})
+    - 230-Day EMA (QQQ): ${ema_230:.2f} (QQQ Price > EMA230: {'YES' if qqq_price > ema_230 else 'NO'})
     - Active EMA Signals: {active_signals} (0, 1, or 2)
-    - Current Position Tier: {current_tier} (0, 1, or 2)
+    - Current Position Tier: {exposure_tier} (0, 1, or 2)
     - ADX Value: {adx_value:.1f}
 
     **Applied Rule**: {action}
@@ -319,9 +331,9 @@ except Exception as e:
 st.subheader("🎨 Dynamic State Rendering Components")
 
 # Determine market state based on EMA signals and ADX
-if 'hist_data' in locals() and not hist_data.empty:
+if 'qqq_hist_data' in locals() and not qqq_hist_data.empty:
     # Use real data to determine state
-    if current_price > ema_45 and current_price > ema_230:
+    if qqq_price > ema_45 and qqq_price > ema_230:
         # Price above both EMAs
         if adx_value >= 25:
             market_state = "Bullish"
@@ -331,7 +343,7 @@ if 'hist_data' in locals() and not hist_data.empty:
             market_state = "Cautious"
             state_description = "Moderate uptrend - Price above both EMAs but weak ADX"
             state_color = "orange"
-    elif current_price > ema_45 or current_price > ema_230:
+    elif qqq_price > ema_45 or qqq_price > ema_230:
         # Price above one EMA
         market_state = "Cautious"
         state_description = "Moderate uptrend - Price above one EMA"
@@ -343,11 +355,11 @@ if 'hist_data' in locals() and not hist_data.empty:
         state_color = "red"
 else:
     # Use fallback data to determine state
-    if current_price > ema_45 and current_price > ema_230:
+    if qqq_price > ema_45 and qqq_price > ema_230:
         market_state = "Bullish"
         state_description = "Strong uptrend - Price above both EMAs (fallback data)"
         state_color = "green"
-    elif current_price > ema_45 or current_price > ema_230:
+    elif qqq_price > ema_45 or qqq_price > ema_230:
         market_state = "Cautious"
         state_description = "Moderate uptrend - Price above one EMA (fallback data)"
         state_color = "orange"
@@ -378,12 +390,12 @@ if market_state == "Bullish":
 
     with stop_col1:
         # Calculate stop levels (simplified for demo)
-        stop1 = current_price * 0.95  # 5% below current price
-        stop2 = current_price * 0.90  # 10% below current price
+        stop1 = tqqq_price * 0.95  # 5% below current price
+        stop2 = tqqq_price * 0.90  # 10% below current price
         st.metric(
             label="🛡️ Primary Stop Loss",
             value=f"${stop1:.2f}",
-            delta=f"-{(current_price-stop1)/current_price*100:.1f}%"
+            delta=f"-{(tqqq_price-stop1)/tqqq_price*100:.1f}%"
         )
         st.caption("Set stop on quote at 45-day EMA or 5% below price")
 
@@ -414,11 +426,11 @@ elif market_state == "Cautious":
 
     with stop_col:
         # Calculate single stop level
-        stop_level = current_price * 0.92  # 8% below current price
+        stop_level = tqqq_price * 0.92  # 8% below current price
         st.metric(
             label="🛑 Consolidated Stop",
             value=f"${stop_level:.2f}",
-            delta=f"-{(current_price-stop_level)/current_price*100:.1f}%"
+            delta=f"-{(tqqq_price-stop_level)/tqqq_price*100:.1f}%"
         )
         st.caption("Single stop level for risk management")
 
@@ -436,11 +448,11 @@ else:  # Bearish
 
     with cash_col:
         # Calculate cash levels
-        cash_trigger = current_price * 0.88  # 12% below for bearish confirmation
+        cash_trigger = tqqq_price * 0.88  # 12% below for bearish confirmation
         st.metric(
             label="💰 Cash Trigger Level",
             value=f"${cash_trigger:.2f}",
-            delta=f"-{(current_price-cash_trigger)/current_price*100:.1f}%"
+            delta=f"-{(tqqq_price-cash_trigger)/tqqq_price*100:.1f}%"
         )
         st.caption("Move to cash if price breaks this level")
 
@@ -451,7 +463,7 @@ else:  # Bearish
         st.metric(
             label="🔄 Re-entry Trigger 1",
             value=f"${reentry_trigger1:.2f}",
-            delta=f"{(reentry_trigger1/current_price-1)*100:+.1f}%" if reentry_trigger1 > 0 else "0.0%"
+            delta=f"{(reentry_trigger1/tqqq_price-1)*100:+.1f}%" if reentry_trigger1 > 0 else "0.0%"
         )
         st.caption("Re-enter if price reclaims 45-day EMA")
 
