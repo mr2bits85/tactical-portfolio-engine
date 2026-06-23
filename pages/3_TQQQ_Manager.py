@@ -149,26 +149,6 @@ try:
             exposure_tier = active_signals
             adx_value = 25
 
-    # Display real-time metrics: TQQQ price (from TQQQ), EMA values from QQQ
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric(
-            "TQQQ Price",
-            f"${tqqq_price:.2f}",
-            f"{tqqq_price_change_pct:+.1f}%"
-        )
-    with col2:
-        st.metric(
-            "45-Day EMA (QQQ)",
-            f"${ema_45:.2f}",
-            f"{ema_45_change_pct:+.1f}%"
-        )
-    with col3:
-        st.metric(
-            "230-Day EMA (QQQ)",
-            f"${ema_230:.2f}",
-            f"{ema_230_change_pct:+.1f}%"
-        )
 
     # TQQQ Strategy Explanation
     st.subheader("🎯 Strategy Overview")
@@ -181,31 +161,32 @@ try:
     The system also considers ADX strength to filter signals.
     """)
 
-    # Current tier indicator based on real calculation
-    st.subheader("📊 Current Exposure Tier (Real-time)")
-    tier_col1, tier_col2, tier_col3 = st.columns(3)
-    with tier_col1:
-        tier_0_active = (exposure_tier == 0)
-        st.metric(
-            "Tier 0 (0%)",
-            "✅ Active" if tier_0_active else "❌ Inactive",
-            f"{active_signals} active signals" if not tier_0_active else "Price below both EMAs"
-        )
-    with tier_col2:
-        tier_1_active = (exposure_tier == 1)
-        st.metric(
-            "Tier 1 (50%)",
-            "✅ Active" if tier_1_active else "❌ Inactive",
-            f"{active_signals} active signals" if tier_1_active else "Not exactly one EMA signal"
-        )
-    with tier_col3:
-        tier_2_active = (exposure_tier == 2)
-        st.metric(
-            "Tier 2 (100%)",
-            "✅ Active" if tier_2_active else "❌ Inactive",
-            f"{active_signals} active signals" if tier_2_active else "Price below both or above only one EMA"
-        )
+    # New: Tier and Recommendation section
+    col1, col2 = st.columns(2)
+    with col1:
+        # Determine tier meaning
+        if exposure_tier == 0:
+            tier_meaning = "Below both EMAs"
+        elif exposure_tier == 1:
+            tier_meaning = "Above one EMA"
+        else: # exposure_tier == 2
+            tier_meaning = "Above both EMAs"
+        st.metric(label="Tier", value=exposure_tier, help=tier_meaning)
+    with col2:
+        st.metric(label="Recommendation", value=action)
 
+        # Then, the metrics row: QQQ Price, TQQQ Price, QQQ 45-Day EMA, QQQ 230-Day EMA, QQQ ADX
+        col1, col2, col3, col4, col5 = st.columns(5)
+        with col1:
+            st.metric("QQQ Price", f"${qqq_price:.2f}", f"{qqq_price_change_pct:+.1f}%")
+        with col2:
+            st.metric("TQQQ Price", f"${tqqq_price:.2f}", f"{tqqq_price_change_pct:+.1f}%")
+        with col3:
+            st.metric("QQQ 45-Day EMA", f"${ema_45:.2f}", f"{ema_45_change_pct:+.1f}%")
+        with col4:
+            st.metric("QQQ 230-Day EMA", f"${ema_230:.2f}", f"{ema_230_change_pct:+.1f}%")
+        with col5:
+            st.metric("QQQ ADX", f"{adx_value:.1f}")
     # EMA Crossover Chart with real data (based on QQQ)
     st.subheader("📈 EMA Crossover Chart (QQQ)")
     if 'qqq_hist_data' in locals() and not qqq_hist_data.empty:
@@ -277,36 +258,6 @@ try:
         reason = f"Active uptrend signals ({active_signals}) == current tier ({current_tier})"
         rec_box = "rec-box-grey"
 
-    # Display recommendation
-    action_col1, action_col2, action_col3 = st.columns(3)
-    with action_col1:
-        if st.button("📈 BUY", type="primary", width='stretch',
-                    disabled=(action != "BUY")):
-            if action == "BUY":
-                st.success("Buy signal executed!")
-                # In real system, would update current_tier
-                st.session_state.last_tier = min(2, st.session_state.last_tier + 1)
-            else:
-                st.error(f"Not recommended: {action}")
-    with action_col2:
-        if st.button("⏸️ HOLD", width='stretch',
-                    disabled=(action != "HOLD")):
-            if action == "HOLD":
-                st.info("Hold position maintained")
-            else:
-                st.error(f"Not recommended: {action}")
-    with action_col3:
-        if st.button("📉 SELL", width='stretch',
-                    disabled=(action != "SELL")):
-            if action == "SELL":
-                st.warning("Sell signal executed!")
-                # In real system, would update current_tier
-                st.session_state.last_tier = max(0, st.session_state.last_tier - 1)
-            else:
-                st.error(f"Not recommended: {action}")
-
-    # Show reasoning
-    st.info(f"**Reason**: {reason}")
 
     # TQQQ Rules Info
     st.subheader("📋 Active TQQQ Rules Context")
