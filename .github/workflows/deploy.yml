@@ -4,19 +4,24 @@ on:
   push:
     branches: [ main ]
 
+# Define global variables cleanly here so they are available to ALL steps
+env:
+  REGION: us-central1
+  REPOSITORY: tpe-repo
+  IMAGE_NAME: tpe-app
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: 'read'
-      id-token: 'write'  # Needed for Auth0/GCP OIDC
+      id-token: 'write'  # Needed for GCP OIDC authentication
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Authenticate to Google Cloud using Workload Identity Federation (recommended)
-      # Alternatively, use a service account key stored as a secret (see comment below)
+      # Authenticate to Google Cloud using Workload Identity Federation
       - name: Authenticate to Google Cloud
         id: auth
         uses: google-github-actions/auth@v2
@@ -25,25 +30,15 @@ jobs:
           workload_identity_provider: "projects/${{ secrets.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github-pool/providers/github-provider"
           service_account: "github-actions@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com"
 
-      # Alternative: Use a service account key (less secure; store as secret)
-      # - name: Set up Cloud SDK
-      #   uses: google-github-actions/setup-gcloud@v2
-      #   with:
-      #     project_id: ${{ secrets.GCP_PROJECT_ID }}
-      #     service_account_key: ${{ secrets.GCP_SA_KEY }}
-      #     export_default_credentials: true
-
       - name: Configure Docker for Artifact Registry
         run: |
-          gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
 
-      - name: Set up variables
+      # Safely create the short SHA and build the full image URI for subsequent steps
+      - name: Set up Image URI
         run: |
-          echo "PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}" >> $GITHUB_ENV
-          echo "REGION=us-central1" >> $GITHUB_ENV
-          echo "REPOSITORY=tpe-repo" >> $GITHUB_ENV
-          echo "IMAGE_NAME=tpe-app" >> $GITHUB_ENV
-          echo "IMAGE_URI=${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/${IMAGE_NAME}:${GITHUB_SHA::8}}" >> $GITHUB_ENV
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-8)
+          echo "IMAGE_URI=${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:${SHORT_SHA}" >> $GITHUB_ENV
 
       - name: Build and push Docker image
         run: |
@@ -55,5 +50,5 @@ jobs:
           gcloud run deploy tactical-portfolio-engine \
             --image=$IMAGE_URI \
             --platform managed \
-            --region $REGION \
+            --region ${{ env.REGION }} \
             --quiet
