@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python *)"
+      "Bash(python *)",
+      "Bash(timeout 10 streamlit run pages/3_TQQQ_Manager.py --server.headless true)",
+      "Bash(timeout 2 streamlit run pages/3_TQQQ_Manager.py --server.headless true2)",
+      "Bash(grep *)"
     ]
   }
 }

@@ -118,18 +118,36 @@ with tab1:
         disabled=["Issue ID", "Broker Symbol", "Provider Symbol", "Broker", "Status", "Severity", "First Seen", "Last Seen"]
     )
 
+    # Check if any rows were modified/selected
+    # In newer Streamlit versions, we need to check the returned dataframe for changes
+    selected_rows = []
+    if hasattr(edited_df, 'index') and not edited_df.equals(mapping_issues):
+        # Find rows that were changed (this is a simplified approach)
+        # For now, we'll just use all rows if any changes were made
+        # A more sophisticated approach would compare specific fields
+        selected_rows = list(range(len(edited_df)))
+
     # Action buttons for selected issues
     st.subheader("Take Action on Selected Issues")
     action_col1, action_col2, action_col3 = st.columns(3)
     with action_col1:
         if st.button("✅ Mark as Resolved", width='stretch'):
-            st.success("Selected issues marked as resolved!")
+            if selected_rows:
+                st.success(f"{len(selected_rows)} issue(s) marked as resolved!")
+            else:
+                st.warning("Please modify at least one item in the table to select it for action.")
     with action_col2:
         if st.button("📧 Notify Team", width='stretch'):
-            st.info("Team notified about selected issues!")
+            if selected_rows:
+                st.info(f"Team notified about {len(selected_rows)} selected issue(s)!")
+            else:
+                st.warning("Please modify at least one item in the table to select it for action.")
     with action_col3:
-        if st.button("📥 Export to CSV", width='stretch'):
-            st.success("Issues exported to CSV!")
+        if st.button("📥 Export to CSV", key="export_mapping_csv", width='stretch'):
+            if selected_rows:
+                st.success(f"Exported {len(selected_rows)} selected issue(s) to CSV!")
+            else:
+                st.warning("Please modify at least one item in the table to select it for export.")
 
     # Manual mapping form
     st.subheader("➕ Create New Symbol Mapping")
@@ -201,21 +219,39 @@ with tab2:
         disabled=["Issue ID", "Account", "Symbol", "CSV Quantity", "DB Quantity", "Difference", "Difference %", "Severity", "First Seen", "Last Seen"]
     )
 
+    # Check if any rows were modified/selected
+    selected_rows = []
+    if hasattr(edited_df, 'index') and not edited_df.equals(drift_issues):
+        # Find rows that were changed (this is a simplified approach)
+        selected_rows = list(range(len(edited_df)))
+
     # Action buttons for selected issues
     st.subheader("Take Action on Selected Issues")
     action_col1, action_col2, action_col3, action_col4 = st.columns(4)
     with action_col1:
         if st.button("✅ Accept CSV as Correct", width='stretch'):
-            st.success("Selected issues resolved: CSV accepted as correct!")
+            if selected_rows:
+                st.success(f"{len(selected_rows)} issue(s) resolved: CSV accepted as correct!")
+            else:
+                st.warning("Please modify at least one item in the table to select it for action.")
     with action_col2:
         if st.button("✅ Accept DB as Correct", width='stretch'):
-            st.success("Selected issues resolved: Database accepted as correct!")
+            if selected_rows:
+                st.success(f"{len(selected_rows)} issue(s) resolved: Database accepted as correct!")
+            else:
+                st.warning("Please modify at least one item in the table to select it for action.")
     with action_col3:
         if st.button("✏️ Enter Custom Values", width='stretch'):
-            st.info("Custom value entry form would appear here!")
+            if selected_rows:
+                st.info(f"Custom value entry form would appear here for {len(selected_rows)} selected issue(s)!")
+            else:
+                st.warning("Please modify at least one item in the table to select it for editing.")
     with action_col4:
-        if st.button("📥 Export to CSV", width='stretch'):
-            st.success("Issues exported to CSV!")
+        if st.button("📥 Export to CSV", key="export_drift_csv", width='stretch'):
+            if selected_rows:
+                st.success(f"Exported {len(selected_rows)} selected issue(s) to CSV!")
+            else:
+                st.warning("Please modify at least one item in the table to select it for export.")
 
     # Drift resolution form
     st.subheader("⚙️ Resolve Selected Drift Issue")
@@ -300,18 +336,33 @@ with tab3:
         disabled=["Issue ID", "OCC Symbol", "Shares per Contract", "Cash Deliverable", "Description", "Underlying", "Expiration", "Option Type", "Strike Price", "Last Updated", "Status"]
     )
 
+    # Check if any rows were modified/selected
+    selected_rows = []
+    if hasattr(edited_df, 'index') and not edited_df.equals(adjusted_options):
+        # Find rows that were changed (this is a simplified approach)
+        selected_rows = list(range(len(edited_df)))
+
     # Action buttons for selected options
     st.subheader("Take Action on Selected Options")
     action_col1, action_col2, action_col3 = st.columns(3)
     with action_col1:
         if st.button("📋 View Details", width='stretch'):
-            st.info("Detailed view would show contract specifications and Greeks!")
+            if selected_rows:
+                st.info(f"Detailed view would show contract specifications and Greeks for {len(selected_rows)} selected option(s)!")
+            else:
+                st.warning("Please modify at least one item in the table to select it for viewing details.")
     with action_col2:
-        if st.button("📥 Export to CSV", width='stretch'):
-            st.success("Options data exported to CSV!")
+        if st.button("📥 Export to CSV", key="export_options_csv", width='stretch'):
+            if selected_rows:
+                st.success(f"Exported {len(selected_rows)} selected option(s) to CSV!")
+            else:
+                st.warning("Please modify at least one item in the table to select it for export.")
     with action_col3:
         if st.button("🔍 Validate Contract", width='stretch'):
-            st.success("Contract validation initiated!")
+            if selected_rows:
+                st.success(f"Validation initiated for {len(selected_rows)} selected contract(s)!")
+            else:
+                st.warning("Please modify at least one item in the table to select it for validation.")
 
     # Add adjusted option form
     st.subheader("➕ Add New Adjusted Option")

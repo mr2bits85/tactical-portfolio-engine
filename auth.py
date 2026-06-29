@@ -37,6 +37,8 @@ def get_current_user() -> Optional[str]:
                 if user_email:
                     # Optionally, you can strip any whitespace
                     user_email = user_email.strip()
+                    if user_email.startswith("accounts.google.com:"):
+                        user_email = user_email.replace("accounts.google.com:", "")
                     if user_email:
                         logger.debug(
                             f"Retrieved user email from IAP header: {user_email}"

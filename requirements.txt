@@ -12,10 +12,15 @@ tenacity>=9.0.0
 
 # Database
 sqlalchemy>=2.0.0,<3.0.0
+alembic>=1.13.0
+psycopg2-binary>=2.9.0
 
 # Google Cloud Secret Manager
 google-cloud-secret-manager>=2.20.0
 google-api-core>=2.20.0
+
+# Environment variable management
+python-dotenv>=1.0.0
 
 # Optional: For development and testing
 # pytest>=7.0.0

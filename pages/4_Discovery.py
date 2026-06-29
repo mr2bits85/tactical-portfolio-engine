@@ -43,6 +43,10 @@ strategy_service, market_data_service = get_services()
 # Get current user
 current_user = get_current_user()
 
+# Initialize watchlist in session state if it doesn't exist
+if 'watchlist' not in st.session_state:
+    st.session_state.watchlist = []
+
 # Page header
 st.title("🔍 Discovery")
 st.caption("Watchlist and Entry Analysis")
@@ -70,20 +74,40 @@ with tab1:
             notes = st.text_area("Notes (optional)")
             submit_button = st.form_submit_button("Add to Watchlist")
             if submit_button and symbol:
-                st.success(f"Added {symbol} to watchlist!")
-                if notes:
-                    st.info(f"Notes: {notes}")
+                # Check if symbol already exists in watchlist
+                existing_symbols = [item['Symbol'] for item in st.session_state.watchlist]
+                if symbol not in existing_symbols:
+                    # Add to watchlist with current date and price (placeholder)
+                    from datetime import datetime
+                    new_item = {
+                        'Symbol': symbol,
+                        'Added Date': datetime.now().strftime('%Y-%m-%d'),
+                        'Notes': notes if notes else '',
+                        'Price': 0.0,  # Placeholder - would be fetched from market data in real app
+                        'Change': '0.0%'  # Placeholder
+                    }
+                    st.session_state.watchlist.append(new_item)
+                    st.success(f"Added {symbol} to watchlist!")
+                    if notes:
+                        st.info(f"Notes: {notes}")
+                else:
+                    st.warning(f"{symbol} is already in your watchlist!")
 
-    # Sample watchlist
-    sample_watchlist = pd.DataFrame({
-        'Symbol': ['AAPL', 'MSFT', 'NVDA', 'TSLA'],
-        'Added Date': ['2023-05-15', '2023-05-20', '2023-06-01', '2023-06-10'],
-        'Notes': ['Strong earnings', 'Cloud leader', 'AI chip play', 'EV pioneer'],
-        'Price': [175.50, 305.25, 380.20, 250.40],
-        'Change': ['+1.2%', '+0.8%', '+3.5%', '-0.5%']
-    })
+    # Watchlist display - use session state watchlist
+    if st.session_state.watchlist:
+        # Convert session state watchlist to DataFrame for display
+        watchlist_data = []
+        for item in st.session_state.watchlist:
+            watchlist_data.append({
+                'Symbol': item['Symbol'],
+                'Added Date': item['Added Date'],
+                'Notes': item['Notes'] if item['Notes'] else '-',
+                'Price': f"${item['Price']:.2f}" if item['Price'] > 0 else '-',
+                'Change': item['Change']
+            })
 
-    if not sample_watchlist.empty:
+        sample_watchlist = pd.DataFrame(watchlist_data)
+
         st.dataframe(sample_watchlist, width='stretch')
 
         # Watchlist actions
@@ -92,12 +116,19 @@ with tab1:
         with action_col1:
             if st.button("🔄 Refresh Prices", width='stretch'):
                 st.success("Watchlist prices refreshed!")
+                # In a real app, we would update prices from market data here
         with action_col2:
             if st.button("📊 Analyze Watchlist", width='stretch'):
-                st.info("Running analysis on watchlist symbols...")
+                if st.session_state.watchlist:
+                    symbols = [item['Symbol'] for item in st.session_state.watchlist]
+                    st.info(f"Running analysis on watchlist symbols: {', '.join(symbols)}")
+                else:
+                    st.info("Your watchlist is empty. Add symbols to analyze.")
         with action_col3:
             if st.button("🗑️ Clear Watchlist", width='stretch'):
-                st.warning("Watchlist cleared!")
+                st.session_state.watchlist = []  # Clear the session state watchlist
+                st.success("Watchlist cleared!")
+                st.rerun()  # Rerun to update the display immediately
     else:
         st.info("Your watchlist is empty. Add symbols to get started.")
 
@@ -127,6 +158,10 @@ with tab2:
                     'Value': [65.2, 'Bullish Cross', 165.20, 155.80, 'Above Avg'],
                     'Signal': ['Neutral', 'Bullish', 'Bullish', 'Bullish', 'Strong']
                 })
+
+                # Force Value column to string to prevent PyArrow crash
+                tech_data['Value'] = tech_data['Value'].astype(str)
+
                 st.dataframe(tech_data, width='stretch')
 
             with analysis_tab2:
@@ -137,6 +172,10 @@ with tab2:
                     'Value': ['28.5', '24.3', '1.8', '0.5%', '$2.8T'],
                     'Assessment': ['Fairly Valued', 'Reasonable', 'Acceptable', 'Low', 'Large Cap']
                 })
+
+                # Force Value column to string to prevent PyArrow crash
+                fund_data['Value'] = fund_data['Value'].astype(str)
+
                 st.dataframe(fund_data, width='stretch')
 
             with analysis_tab3:
@@ -151,7 +190,23 @@ with tab2:
                 action_col1, action_col2 = st.columns(2)
                 with action_col1:
                     if st.button("📝 Add to Watchlist", width='stretch'):
-                        st.success(f"{symbol_to_analyze} added to watchlist!")
+                        # Check if symbol already exists in watchlist
+                        existing_symbols = [item['Symbol'] for item in st.session_state.watchlist]
+                        if symbol_to_analyze not in existing_symbols:
+                            # Add to watchlist with current date and placeholder price
+                            from datetime import datetime
+                            new_item = {
+                                'Symbol': symbol_to_analyze,
+                                'Added Date': datetime.now().strftime('%Y-%m-%d'),
+                                'Notes': f"Added from analysis on {datetime.now().strftime('%Y-%m-%d')}",
+                                'Price': 0.0,  # Placeholder - would be fetched from market data in real app
+                                'Change': 'N/A'
+                            }
+                            st.session_state.watchlist.append(new_item)
+                            st.success(f"{symbol_to_analyze} added to watchlist!")
+                            st.rerun()  # Rerun to update the watchlist display immediately
+                        else:
+                            st.info(f"{symbol_to_analyze} is already in your watchlist!")
                 with action_col2:
                     if st.button("📋 Create Alert", width='stretch'):
                         st.success(f"Price alert created for {symbol_to_analyze}!")

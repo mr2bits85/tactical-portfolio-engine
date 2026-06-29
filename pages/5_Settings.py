@@ -142,6 +142,10 @@ else:
             'Property': ['Host', 'Port', 'Database Name', 'Username', 'Connection Status'],
             'Value': ['localhost', '5432', 'tactical_portfolio_db', 'app_user', '✅ Connected']
         })
+
+        # Force Value column to string to prevent PyArrow crash
+        db_info['Value'] = db_info['Value'].astype(str)
+
         st.dataframe(db_info, width='stretch')
 
         # Pool settings
