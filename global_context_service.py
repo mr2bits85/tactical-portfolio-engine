@@ -33,7 +33,7 @@ class GlobalContextService:
         # Anchor symbols as defined in the ledger
         self.anchor_symbols = ["SPY", "QQQ", "VIX"]
         # Indicators to compute and store
-        self.indicators_to_compute = ["price"]  # Can be extended
+        self.indicators_to_compute = ["price", "price_change"]  # Can be extended
 
     def update_anchor_metrics(self) -> Dict[str, Any]:
         """
@@ -69,14 +69,18 @@ class GlobalContextService:
         if price is None:
             raise ValueError(f"Could not fetch price for {symbol}")
 
-        # Compute additional indicators (can be extended)
-        indicators = {"price": price}
+        # Calculate price change using live price and previous close from historical data
+        hist_data = self.market_data.get_historical_data(symbol, period="2d", interval="1d")
+        price_change = None
+        if hist_data is not None and not hist_data.empty and len(hist_data) >= 2:
+            close_series = hist_data['Close']
+            # Use the second-to-last close as the per previous close (as per requirement)
+            previous_close = close_series.iloc[-2]
+            if previous_close != 0:  # Avoid division by zero
+                price_change = ((price - previous_close) / previous_close) * 100
 
-        # TODO: Add more indicators like moving averages, volatility, etc.
-        # For example:
-        # sma_50 = self._calculate_sma(symbol, 50)
-        # if sma_50 is not None:
-        #     indicators["sma_50"] = sma_50
+        # Compute additional indicators (can be extended)
+        indicators = {"price": price, "price_change": price_change}
 
         # Store each indicator in the market_regime table
         stored_indicators = {}
@@ -158,10 +162,10 @@ class GlobalContextService:
         """
         try:
             from sqlalchemy import select
-            from datetime import datetime, timedelta
+            from datetime import datetime, timedelta, timezone
 
             # Get the most recent value (within last 30 minutes to avoid stale data)
-            cutoff_time = datetime.now() - timedelta(minutes=30)
+            cutoff_time = datetime.now(timezone.utc) - timedelta(minutes=30)
             stmt = select(MarketRegime.indicator_value).where(
                 MarketRegime.anchor_symbol == symbol.upper(),
                 MarketRegime.indicator_name == indicator_name,
@@ -169,7 +173,17 @@ class GlobalContextService:
             ).order_by(MarketRegime.calculated_at.desc()).limit(1)
 
             result = self.session.execute(stmt).scalar_one_or_none()
-            return float(result) if result is not None else None
+            if result is not None:
+                return float(result)
+
+            # Fallback: get the most recent overall if no recent data
+            stmt_fallback = select(MarketRegime.indicator_value).where(
+                MarketRegime.anchor_symbol == symbol.upper(),
+                MarketRegime.indicator_name == indicator_name
+            ).order_by(MarketRegime.calculated_at.desc()).limit(1)
+
+            result_fallback = self.session.execute(stmt_fallback).scalar_one_or_none()
+            return float(result_fallback) if result_fallback is not None else None
         except Exception as e:
             logger.error(
                 f"Failed to get latest indicator {indicator_name} for {symbol}: {e}"

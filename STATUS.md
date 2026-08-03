@@ -46,6 +46,16 @@
 
 ---
 
+## Remediation: Data Pipeline & Hydration (REMEDIATION.md)
+- [x] **Step 1**: Eradicate Mock Data - Completed
+- [x] **Step 2**: Implement On-Demand Hydration Trigger - Completed
+- [x] **Step 3**: Wire Frontend to the Database - Completed
+- [x] **Step 4**: Enforce Service Layer in TQQQ Manager - Completed
+- [x] **Step 5**: Activate Macro Gating - Completed
+- **Overall**: REMEDIATION.md 100% Complete
+
+---
+
 ## Notes, Bugs, & Blockers
 * Use this section during your coding sessions to write down notes, flag unexpected API errors, or log issues you want Claude to fix before checking off a task.
 * *Example: "Task 1.1 database connection timed out on local docker test—need to verify localhost socket configuration."*

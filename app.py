@@ -106,6 +106,15 @@ def get_services():
 
 strategy_service, market_data_service, global_context_service = get_services()
 
+# Auto-refresh market data every 5 minutes (300 seconds)
+@st.cache_data(ttl=300)
+def refresh_market_data():
+    """Automatically refresh market data every 5 minutes."""
+    return global_context_service.update_anchor_metrics()
+
+# Initial data load on app startup
+initial_refresh = refresh_market_data()
+
 # Get current user
 current_user = get_current_user()
 
@@ -128,30 +137,42 @@ st.header("📈 Market Overview & Macro Context")
 
 # Get macro data (with fallback for demo)
 try:
-    # In a real app, we would fetch real data here
-    # For demo, we'll use mock data or handle gracefully
-    spy_price = "$450.00"
-    spy_change = "+1.2%"
-    qqq_price = "$380.00"
-    qqq_change = "+0.8%"
-    vix_level = "15.2"
-    vix_change = "-0.5"
-except:
-    # Fallback values
-    spy_price = "$450.00"
-    spy_change = "+1.2%"
-    qqq_price = "$380.00"
-    qqq_change = "+0.8%"
-    vix_level = "15.2"
-    vix_change = "-0.5"
+    # Get SPY data
+    spy_price_raw = global_context_service.get_latest_indicator("SPY", "price")
+    spy_price = f"${spy_price_raw:.2f}" if spy_price_raw is not None else "$0.00"
+    spy_change_raw = global_context_service.get_latest_indicator("SPY", "price_change")
+    # Convert to float for delta; if None, set to 0.0 (no change)
+    spy_change = float(spy_change_raw) if spy_change_raw is not None else 0.0
 
+    # Get QQQ data
+    qqq_price_raw = global_context_service.get_latest_indicator("QQQ", "price")
+    qqq_price = f"${qqq_price_raw:.2f}" if qqq_price_raw is not None else "$0.00"
+    qqq_change_raw = global_context_service.get_latest_indicator("QQQ", "price_change")
+    qqq_change = float(qqq_change_raw) if qqq_change_raw is not None else 0.0
+
+    # Get VIX data
+    vix_price_raw = global_context_service.get_latest_indicator("VIX", "price")
+    vix_level = f"{vix_price_raw:.2f}" if vix_price_raw is not None else "0.00"
+    vix_change_raw = global_context_service.get_latest_indicator("VIX", "price_change")
+    vix_change = float(vix_change_raw) if vix_change_raw is not None else 0.0
+except Exception as e:
+	    # Fallback values if data not available
+	    spy_price = "$0.00"
+	    qqq_price = "$0.00"
+	    vix_level = "0.00"
+	    st.warning(f"Unable to fetch live market data: {e}")
+
+					
 col1, col2, col3 = st.columns(3)
 with col1:
-    st.metric("SPY", spy_price, spy_change)
+    spy_delta = f"{spy_change:+.2f}%"
+    st.metric("SPY", spy_price, spy_delta)
 with col2:
-    st.metric("QQQ", qqq_price, qqq_change)
+    qqq_delta = f"{qqq_change:+.2f}%"
+    st.metric("QQQ", qqq_price, qqq_delta)
 with col3:
-    st.metric("VIX", vix_level, vix_change)
+    vix_delta = f"{vix_change:+.2f}%"
+    st.metric("VIX", vix_level, vix_delta, delta_color="inverse")
 
 # Priority Signals Section
 st.header("🚨 Priority Signals")
@@ -239,7 +260,15 @@ quick_col1, quick_col2, quick_col3, quick_col4 = st.columns(4)
 
 with quick_col1:
     if st.button("🔄 Refresh All Data", width='stretch'):
-        st.success("All data refreshed!")
+        with st.spinner("Refreshing market data..."):
+            refresh_market_data.clear()  # Force clear the cache to ensure execution
+            result = refresh_market_data()
+            # Check if any errors occurred during update
+            errors = [k for k, v in result.items() if isinstance(v, dict) and "error" in v]
+            if errors:
+                st.error(f"Failed to refresh data for: {', '.join(errors)}")
+            else:
+                st.success("All data refreshed!")
 
 with quick_col2:
     if st.button("📊 Run Market Scan", width='stretch'):
