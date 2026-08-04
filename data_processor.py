@@ -1,124 +1,76 @@
 """
 Data processing engine for safely committing verified data chunks to the database.
-Handles insertion of transaction_lots and portfolio_snapshots records.
+Handles the Authoritative State Override for portfolio snapshots.
 """
 import logging
-from typing import List, Dict, Any
-
+from typing import Dict, List, Any
+from datetime import date
+from sqlalchemy import select
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
 
-from models import TransactionLots, PortfolioSnapshots
+from models import BrokerageAccounts, PortfolioSnapshots
 
 logger = logging.getLogger(__name__)
 
 
-def process_transaction_lots(
-    session: Session,
-    lots_data: List[Dict[str, Any]],
-) -> int:
+def execute_state_override(parsed_accounts: Dict[str, List[Dict[str, Any]]], session: Session) -> int:
     """
-    Process and insert transaction lots data into the database.
+    Authoritative State Override:
+    Wipes existing snapshot holdings for each matched account in the CSV
+    and replaces them with fresh parsed data.
 
-    Args:
-        session: SQLAlchemy session.
-        lots_data: List of dictionaries, each representing a transaction lot.
-                   Expected keys: portfolio_id, symbol, asset_type, quantity,
-                   purchase_price, purchase_date.
-
-    Returns:
-        Number of lots successfully inserted.
+    Executes as a single atomic transaction.
     """
-    inserted_count = 0
-    for lot_dict in lots_data:
-        try:
-            # Create a TransactionLots instance from the dictionary
-            lot = TransactionLots(**lot_dict)
-            session.add(lot)
-            session.commit()
-            inserted_count += 1
-            logger.debug(f"Inserted transaction lot: {lot_dict}")
-        except IntegrityError as e:
-            session.rollback()
-            logger.warning(
-                f"Integrity error inserting transaction lot {lot_dict}: {e}. Skipping."
-            )
-        except Exception as e:
-            session.rollback()
-            logger.error(
-                f"Unexpected error inserting transaction lot {lot_dict}: {e}",
-                exc_info=True,
-            )
-    logger.info(f"Processed {inserted_count} transaction lots.")
-    return inserted_count
+    total_saved = 0
+    today = date.today()
 
+    try:
+        for account_str, holdings in parsed_accounts.items():
+            # 1. Match or locate account by string identifier (e.g., 'ROTH *1234')
+            stmt = select(BrokerageAccounts).where(BrokerageAccounts.account_number == account_str)
+            account = session.execute(stmt).scalar_one_or_none()
 
-def process_portfolio_snapshots(
-    session: Session,
-    snapshots_data: List[Dict[str, Any]],
-) -> int:
-    """
-    Process and insert portfolio snapshots data into the database.
+            # Auto-provision account if not found
+            if not account:
+                account = BrokerageAccounts(
+                    user_id=1,  # Default dev user
+                    broker_name="Fidelity",
+                    account_number=account_str
+                )
+                session.add(account)
+                session.flush()  # Obtain assigned ID without committing
 
-    Args:
-        session: SQLAlchemy session.
-        snapshots_data: List of dictionaries, each representing a portfolio snapshot.
-                        Expected keys: account_id, symbol, asset_type, total_quantity,
-                        capture_date.
+            # 2. Wipe current active snapshot positions for this account
+            session.query(PortfolioSnapshots).filter(
+                PortfolioSnapshots.account_id == account.id
+            ).delete()
 
-    Returns:
-        Number of snapshots successfully inserted.
-    """
-    inserted_count = 0
-    for snapshot_dict in snapshots_data:
-        try:
-            snapshot = PortfolioSnapshots(**snapshot_dict)
-            session.add(snapshot)
-            session.commit()
-            inserted_count += 1
-            logger.debug(f"Inserted portfolio snapshot: {snapshot_dict}")
-        except IntegrityError as e:
-            session.rollback()
-            logger.warning(
-                f"Integrity error inserting portfolio snapshot {snapshot_dict}: {e}. Skipping."
-            )
-        except Exception as e:
-            session.rollback()
-            logger.error(
-                f"Unexpected error inserting portfolio snapshot {snapshot_dict}: {e}",
-                exc_info=True,
-            )
-    logger.info(f"Processed {inserted_count} portfolio snapshots.")
-    return inserted_count
+            # 3. Insert fresh state from CSV
+            for item in holdings:
+                snapshot = PortfolioSnapshots(
+                    account_id=account.id,
+                    symbol=item['symbol'],
+                    description=item['description'],
+                    total_quantity=item['quantity'],
+                    last_price=item['last_price'],
+                    avg_cost=item['avg_cost'],
+                    basis=item['basis'],
+                    value=item['value'],
+                    earnings_date=item.get('earnings_date'),
+                    div_ex_date=item.get('div_ex_date'),
+                    capture_date=today,
+                    is_approved=True
+                )
+                session.add(snapshot)
+                total_saved += 1
 
+        # 4. Commit all deletions and insertions as a single atomic transaction
+        session.commit()
+        logger.info(f"State override successful. Processed {total_saved} portfolio snapshots.")
+        return total_saved
 
-# Optional: A unified processor that can handle both types based on a 'type' field.
-def process_data_chunks(
-    session: Session,
-    data_chunks: List[Dict[str, Any]],
-    chunk_type: str,
-) -> int:
-    """
-    Process data chunks of a specified type.
-
-    Args:
-        session: SQLAlchemy session.
-        data_chunks: List of dictionaries containing the data.
-        chunk_type: Either 'transaction_lots' or 'portfolio_snapshots'.
-
-    Returns:
-        Number of records successfully inserted.
-    """
-    if chunk_type == "transaction_lots":
-        return process_transaction_lots(session, data_chunks)
-    elif chunk_type == "portfolio_snapshots":
-        return process_portfolio_snapshots(session, data_chunks)
-    else:
-        raise ValueError(f"Unknown chunk type: {chunk_type}")
-
-
-# Example usage (for testing)
-if __name__ == "__main__":
-    # This is just a demo; remove or adapt for actual use.
-    print("Data processing engine for transaction_lots and portfolio_snapshots.")
-    print("To use, import the functions and call them with a SQLAlchemy session and data.")
+    except Exception as e:
+        # If any part of the process fails, roll back the entire transaction
+        session.rollback()
+        logger.error(f"Error during state override: {e}", exc_info=True)
+        raise e

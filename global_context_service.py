@@ -32,6 +32,11 @@ class GlobalContextService:
         self.market_data = MarketDataService(session)
         # Anchor symbols as defined in the ledger
         self.anchor_symbols = ["SPY", "QQQ", "VIX"]
+
+        # API aliases for external fetching (e.g., yfinance index quirks)
+        self.api_aliases = {
+            "VIX": "^VIX"
+        }
         # Indicators to compute and store
         self.indicators_to_compute = ["price", "price_change"]  # Can be extended
 
@@ -64,29 +69,38 @@ class GlobalContextService:
         Returns:
             Dictionary of computed indicators.
         """
-        # Fetch current price
-        price = self.market_data.get_current_price(symbol)
+        # --- ALIAS INTERCEPT ---
+        # Translate VIX for yfinance, but keep the original string in 'symbol'
+        api_symbol = "^VIX" if symbol == "VIX" else symbol
+
+        # Fetch current price using the api_symbol
+        price = self.market_data.get_current_price(api_symbol)
         if price is None:
-            raise ValueError(f"Could not fetch price for {symbol}")
+            raise ValueError(f"Could not fetch price for {symbol} (using API symbol: {api_symbol})")
 
         # Calculate price change using live price and previous close from historical data
-        hist_data = self.market_data.get_historical_data(symbol, period="2d", interval="1d")
+        # Ensure we use api_symbol here as well
+        hist_data = self.market_data.get_historical_data(api_symbol, period="2d", interval="1d")
         price_change = None
         if hist_data is not None and not hist_data.empty and len(hist_data) >= 2:
             close_series = hist_data['Close']
-            # Use the second-to-last close as the per previous close (as per requirement)
+            # Use the second-to-last close as the previous close
             previous_close = close_series.iloc[-2]
             if previous_close != 0:  # Avoid division by zero
-                price_change = ((price - previous_close) / previous_close) * 100
+                # Explicitly cast to float to prevent numpy type errors
+                price_change = float(((price - previous_close) / previous_close) * 100)
 
-        # Compute additional indicators (can be extended)
-        indicators = {"price": price, "price_change": price_change}
+        # Compute additional indicators
+        # (Explicitly casting price to float as well, just to be safe)
+        indicators = {"price": float(price) if price is not None else None,
+                      "price_change": price_change}
 
         # Store each indicator in the market_regime table
         stored_indicators = {}
         for indicator_name, indicator_value in indicators.items():
             if indicator_value is not None:
                 try:
+                    # Note: We are using the ORIGINAL 'symbol' ("VIX") here!
                     self._store_indicator(symbol, indicator_name, indicator_value)
                     stored_indicators[indicator_name] = indicator_value
                 except Exception as e:
@@ -125,7 +139,7 @@ class GlobalContextService:
 
         if existing:
             # Update existing record
-            existing.indicator_value = indicator_value
+            existing.indicator_value = float(indicator_value)
             existing.calculated_at = datetime.now()
             logger.debug(
                 f"Updated {indicator_name} for {symbol} to {indicator_value}"
@@ -135,7 +149,7 @@ class GlobalContextService:
             regime_record = MarketRegime(
                 anchor_symbol=symbol.upper(),
                 indicator_name=indicator_name,
-                indicator_value=indicator_value
+                indicator_value=float(indicator_value)
             )
             self.session.add(regime_record)
             logger.debug(
@@ -263,7 +277,7 @@ def get_global_context_service(session: Session) -> GlobalContextService:
     Returns:
         GlobalContextService instance.
     """
-    return GlobalContextService(service)
+    return GlobalContextService(session)
 
 
 def update_global_context(session: Session) -> Dict[str, Any]:

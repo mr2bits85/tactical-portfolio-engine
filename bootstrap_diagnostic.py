@@ -15,7 +15,7 @@ try:
 except ImportError:
     _yfinance_available = False
 
-from models import SystemNotifications
+
 
 logger = logging.getLogger(__name__)
 
@@ -111,38 +111,38 @@ class BootstrapDiagnostic:
         )
         return results
 
-    def _log_provider_failure(
-        self, symbol: str, provider: str, error_message: str
-    ) -> None:
-        """
-        Log a provider failure to the system_notifications table.
-
-        Args:
-            symbol: The symbol that failed.
-            provider: The provider name (e.g., "yfinance").
-            error_message: The error message from the validation attempt.
-        """
-        try:
-            notification = SystemNotifications(
-                category="provider_fetch_failed",
-                is_resolved=False,
-                metadata={
-                    "symbol": symbol,
-                    "provider": provider,
-                    "error": error_message,
-                },
-            )
-            self.db_session.add(notification)
-            self.db_session.commit()
-            logger.debug(
-                f"Logged provider failure for symbol '{symbol}' to system_notifications."
-            )
-        except Exception as e:
-            self.db_session.rollback()
-            logger.error(
-                f"Failed to log provider failure for symbol '{symbol}' to database: {e}",
-                exc_info=True,
-            )
+    # def _log_provider_failure(
+    #     self, symbol: str, provider: str, error_message: str
+    # ) -> None:
+    #     """
+    #     Log a provider failure to the system_notifications table.
+    #
+    #     Args:
+    #         symbol: The symbol that failed.
+    #         provider: The provider name (e.g., "yfinance").
+    #         error_message: The error message from the validation attempt.
+    #     """
+    #     try:
+    #         notification = SystemNotifications(
+    #             category="provider_fetch_failed",
+    #             is_resolved=False,
+    #             metadata={
+    #                 "symbol": symbol,
+    #                 "provider": provider,
+    #                 "error": error_message,
+    #             },
+    #         )
+    #         self.db_session.add(notification)
+    #         self.db_session.commit()
+    #         logger.debug(
+    #             f"Logged provider failure for symbol '{symbol}' to system_notifications."
+    #         )
+    #     except Exception as e:
+    #         self.db_session.rollback()
+    #         logger.error(
+    #             f"Failed to log provider failure for symbol '{symbol}' to database: {e}",
+    #             exc_info=True,
+    #         )
 
 
 # Convenience function for quick validation

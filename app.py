@@ -21,6 +21,8 @@ import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from models import Base
+from database import SessionLocal
+
 try:
     from dotenv import load_dotenv
     _dotenv_available = True
@@ -47,51 +49,8 @@ load_css()
 # Initialize services
 @st.cache_resource
 def get_services():
-    # Get database URL from Secret Manager or environment
-    database_url = None
-
-    # Try to get from Secret Manager first (preferred in production)
     try:
-        database_url = get_secret("TACTICAL_DATABASE_URL")
-        if database_url:
-            st.sidebar.success("✅ Database URL retrieved from Secret Manager")
-    except Exception as e:
-        # Don't show warning here as it's expected in local dev
-        pass
-
-    # Fallback to environment variable (for local development and Cloud Run)
-    if not database_url:
-        database_url = os.getenv("TACTICAL_DATABASE_URL")
-        if database_url:
-            st.sidebar.info("ℹ️ Using DATABASE_URL from environment variable")
-
-    # Fallback to .env file directly
-    if not database_url and _dotenv_available:
-        # Load .env file if not already loaded
-        load_dotenv()  # This is safe to call multiple times
-        database_url = os.getenv("TACTICAL_DATABASE_URL")
-        if database_url:
-            st.sidebar.info("ℹ️ Using DATABASE_URL from .env file")
-
-    # Final fallback to hardcoded local development URL (for backwards compatibility)
-    if not database_url:
-        database_url = "postgresql://postgres:password@127.0.0.1:5432/tactical_portfolio_db"
-        st.sidebar.warning("⚠️ Using hardcoded local development database URL")
-
-    if not database_url:
-        st.error("❌ DATABASE_URL not found. Please set TACTICAL_DATABASE_URL in Secret Manager or environment.")
-        st.stop()
-
-    # Create database engine and session
-    try:
-        engine = create_engine(database_url, pool_pre_ping=True, echo=False)
-        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-        # Create tables if they don't exist (for first-time setup)
-        # NOTE: In production, you should use Alembic migrations instead of this
-        Base.metadata.create_all(bind=engine)
-
-        # Get a database session
+        # Get a database session from our new database.py file
         db_session = SessionLocal()
 
         # Initialize services with database session
@@ -101,7 +60,7 @@ def get_services():
 
         return strategy_service, market_data_service, global_context_service
     except Exception as e:
-        st.error(f"❌ Failed to connect to database: {e}")
+        st.error(f"❌ Failed to initialize services or connect to database: {e}")
         st.stop()
 
 strategy_service, market_data_service, global_context_service = get_services()
