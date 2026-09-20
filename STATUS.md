@@ -1,61 +1,36 @@
-# Tactical Portfolio Engine - Project Status Log
+# Tactical Portfolio Engine - Development Status
 
-## Current Project State
-- **Active Phase**: Phase 5: Resolution Center & Admin Controls (Complete)
-- **Current Task**: All tasks completed
-- **Overall Progress**: 100% Complete
-
----
-
-## Phase 1: Database & Security Foundations
-- [x] **Task 1.1**: Build base SQLAlchemy model structures for all Tier 1, 2, and 3 database tables (including future-proofed tables).
-- [x] **Task 1.2**: Implement Google Secret Manager loading utility class to securely provision environment configurations.
-- [x] **Task 1.3**: Implement `get_current_user()` module to process native Cloud Run IAP identity headers with a local `DEV_USER_EMAIL` fallback.
-- [x] **Task 1.4**: Implement Just-In-Time (JIT) user provisioning service database hook.
+## Project Philosophy: Signal vs. Noise
+The previous iteration of this app was over-engineered. We are doing a "Soft Reset" of the frontend and logic layers while preserving the GCP/Cloud SQL infrastructure. 
+**Core Mandates:**
+1. **No Caching Nightmares:** All prices must display a visible "Last Fetched" timestamp.
+2. **Simple Uploads:** Uploading a CSV wipes the old portfolio state and becomes the new "Single Source of Truth." No complex transaction math.
+3. **Admin First:** The primary developer account must have Admin access to fix mappings globally.
 
 ---
 
-## Phase 2: Ingestion Pipeline & Normalization
-- [x] **Task 2.1**: Build broker CSV parser targeting raw exported files, ensuring seamless `asset_type` extraction.
-- [x] **Task 2.2**: Build bootstrap diagnostic engine to run dry-run validation checks against market data providers and route lookup errors to `system_notifications`.
-- [x] **Task 2.3**: Build data processing engine to safely commit verified data chunks to `transaction_lots` and `portfolio_snapshots`.
-- [x] **Task 2.4**: Build the Drift Engine to calculate discrepancies between physical reality (CSV) and database lots, with auto-hiding for micro-variances.
+## Phase 1: The Purge & Admin Access
+- [ ] **Step 1: Clean the UI Slate.** Delete all broken UI placeholders on the TQQQ, Core, and Momentum pages. Strip the app down to a basic navigation sidebar.
+- [ ] **Step 2: Fix Admin Access.** Modify the database or the `get_current_user()` logic so the primary developer email is recognized as `role='admin'`. Ensure the Settings page is accessible.
+- [ ] **Step 3: Global Symbol Mapping.** Build a simple UI on the Settings page to add/edit/delete ticker mappings (e.g., `BRK/B` to `BRK-B`). 
 
----
+## Phase 2: Data Foundations & Uploads
+- [ ] **Step 1: Reliable Market Data.** Rip out unreliable cached `yfinance` calls. Implement a strict on-demand fetcher that returns a price and a `timestamp`. Ensure this timestamp is rendered in the UI anywhere a price is shown.
+- [ ] **Step 2: Tastytrade API Prep (Optional/Pending).** Scaffold the connection utilities for the Tastytrade API to replace `yfinance`.
+- [ ] **Step 3: Fidelity CSV Upload.** Rebuild the upload manager. Logic: Read CSV -> Wipe current holdings for user -> Insert new holdings. 
+- [ ] **Step 4: Quant Ratings Upload.** Build a CSV uploader for Seeking Alpha Quant Ratings.
+- [ ] **Step 5: Quant Freshness.** Add logic to globally discard/ignore Quant Ratings where `upload_date` is older than 7 days.
 
-## Phase 3: Market Data & Background Services
-- [x] **Task 3.1**: Build core `MarketDataService` using `yfinance` protected by `tenacity` exponential backoff and jitter.
-- [x] **Task 3.2**: Implement batch-resilient wrapper logic (try-except scopes) to prevent single-ticker lookup failures from halting ingestion batches.
-- [x] **Task 3.3**: Build `GlobalContextService` implementing the "Anchor First" pattern to update macro indices ($SPY, $QQQ, $VIX) and store metrics in the `market_regime` table.
-- [x] **Task 3.4**: Implement macro logic gating to automatically freeze or suppress volatile strategy signals across the platform if anchor data is stale or failed.
+## Phase 3: TQQQ Manager (MVP)
+- [ ] **Step 1: Indicators.** Calculate current price, 45-day EMA, 235-day EMA, and ADX (using a strict threshold of 25 to confirm trends).
+- [ ] **Step 2: Dashboard UI.** Build a clean dashboard displaying these 4 metrics clearly.
+- [ ] **Step 3: Action Logic.** Display explicit "Bullish", "Bearish", or "Wait" signals based on the EMA crossovers and ADX > 25 rule.
 
----
+## Phase 4: Core vs. Momentum
+- [ ] **Step 1: Portfolio Segmentation.** Update the UI to parse the uploaded portfolio into two distinct buckets: "Core" and "Momentum".
+- [ ] **Step 2: Core View.** Build the Core dashboard. Show price, daily performance, and Quant Rating (if < 7 days old). Add placeholders for future Health Score/Earnings integrations.
+- [ ] **Step 3: Momentum View.** Build the Momentum dashboard. Integrate legacy `logic_rules.py` to calculate trailing stops and automated triggers.
+- [ ] **Step 4: Trigger Tracking.** Add a UI checkbox next to Momentum recommendations allowing the user to mark "Order placed at broker."
 
-## Phase 4: Strategy Engines & Dynamic UI Layouts
-- [x] **Task 4.1**: Refactor mathematical models out of legacy `logic_rules.py` into a type-hinted, modern `StrategyService` class.
-- [x] **Task 4.2**: Set up the multi-page Streamlit directory architecture linked natively to the centralized `assets/style.css` stylesheet layout.
-- [x] **Task 4.3**: Implement the real-time calculated TQQQ Manager Engine using the 45-day and 230-day EMA tiers to eliminate physical state drift.
-- [x] **Task 4.4**: Build dynamic front-end state rendering components for the TQQQ Dashboard (Bullish states showing two stops, Cautious showing one stop/half-out alert, Bearish showing cash/re-entry triggers).
-
----
-
-## Phase 5: Resolution Center & Admin Controls
-- [x] **Task 5.1**: Build the main **Action Center Dashboard** (`app.py`) for high-priority trading signals, entry targets, and active trailing flags.
-- [x] **Task 5.2**: Build the interactive **Resolution Center UI** page to expose the actionable active inbox for failed symbol mappings and lot drift anomalies.
-- [x] **Task 5.3**: Build Admin Control panels to allow authorized user roles to push global symbol translation overrides directly to the `ticker_mappings` master table.
-
----
-
-## Remediation: Data Pipeline & Hydration (REMEDIATION.md)
-- [x] **Step 1**: Eradicate Mock Data - Completed
-- [x] **Step 2**: Implement On-Demand Hydration Trigger - Completed
-- [x] **Step 3**: Wire Frontend to the Database - Completed
-- [x] **Step 4**: Enforce Service Layer in TQQQ Manager - Completed
-- [x] **Step 5**: Activate Macro Gating - Completed
-- **Overall**: REMEDIATION.md 100% Complete
-
----
-
-## Notes, Bugs, & Blockers
-* Use this section during your coding sessions to write down notes, flag unexpected API errors, or log issues you want Claude to fix before checking off a task.
-* *Example: "Task 1.1 database connection timed out on local docker test—need to verify localhost socket configuration."*
+## Phase 5: Options Strategy Engine (Future Vision)
+- [ ] *Pending MVP Completion.* Will include grouping by underlying, unassigned leg alerts, strategy assignment (Wheel, Spreads, Butterflies), Profit/Loss charts using live Bid/Ask, and "Gatekeeper" logic (Moneyness, IVR > 60) for alternative pivot recommendations.

@@ -1,5 +1,5 @@
 
-archive/
+archive_docs/
 
 # Environment variables
 .env
@@ -51,3 +51,4 @@ npm-debug.log*
 build/
 dist/
 *.egg-info/
+.aider*
