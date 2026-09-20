@@ -106,7 +106,10 @@ st.title("📊 Portfolio Holdings")
 st.caption("View current holdings, tax-lots, and update account state via CSV export.")
 
 if current_user:
-    st.sidebar.success(f"Logged in as: {current_user}")
+    email = current_user.get('email', 'Unknown') if isinstance(current_user, dict) else str(current_user)
+    st.sidebar.success(f"Logged in as: {email}")
+    if isinstance(current_user, dict) and current_user.get('role') == 'admin':
+        st.sidebar.success("🔑 Admin")
 else:
     st.sidebar.warning("Running in development mode")
 

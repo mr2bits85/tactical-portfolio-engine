@@ -29,8 +29,9 @@ current_user = get_current_user()
 with st.sidebar:
     st.title("Navigation")
     if current_user:
-        st.success(f"Logged in as: {current_user['email']}")
-        if current_user.get('role') == 'admin':
+        email = current_user.get('email', 'Unknown') if isinstance(current_user, dict) else str(current_user)
+        st.success(f"Logged in as: {email}")
+        if isinstance(current_user, dict) and current_user.get('role') == 'admin':
             st.success("🔑 Admin")
     else:
         st.warning("Running in development mode")
@@ -47,7 +48,7 @@ st.title("⚙️ Settings")
 st.caption("Admin Controls & System Health")
 
 # Admin check using role from user object
-is_admin = current_user and current_user.get("role") == "admin"
+is_admin = current_user and isinstance(current_user, dict) and current_user.get("role") == "admin"
 
 if not is_admin:
     st.warning("🔒 Administrator access required for this page.")

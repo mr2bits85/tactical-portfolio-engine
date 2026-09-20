@@ -39,7 +39,10 @@ st.subheader("Signal vs Noise Dashboard")
 with st.sidebar:
     st.title("Navigation")
     if current_user:
-        st.success(f"Logged in as: {current_user}")
+        email = current_user.get('email', 'Unknown') if isinstance(current_user, dict) else str(current_user)
+        st.success(f"Logged in as: {email}")
+        if isinstance(current_user, dict) and current_user.get('role') == 'admin':
+            st.success("🔑 Admin")
     else:
         st.warning("Running in development mode")
     
