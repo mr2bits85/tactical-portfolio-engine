@@ -54,13 +54,26 @@ def get_current_user() -> Optional[str]:
                     )
             else:
                 logger.debug(
-                    "Streamlit context or headers not available; falling back to environment variable."
+                    "Streamlit context or headers not available; falling back to secrets/env."
                 )
         except Exception as e:
             logger.warning(
                 f"Failed to retrieve user email from Streamlit context: {e}. "
-                f"Falling back to environment variable."
+                f"Falling back to secrets/env."
             )
+
+    # Fallback to Streamlit secrets (for local development via .streamlit/secrets.toml)
+    if _streamlit_available and hasattr(st, 'secrets'):
+        dev_user_email = st.secrets.get("DEV_USER_EMAIL")
+        if dev_user_email:
+            dev_user_email = dev_user_email.strip()
+            if dev_user_email:
+                logger.debug(
+                    f"Retrieved user email from Streamlit secrets: {dev_user_email}"
+                )
+                return dev_user_email
+            else:
+                logger.warning("DEV_USER_EMAIL in Streamlit secrets is set but empty.")
 
     # Fallback to environment variable
     dev_user_email = os.getenv("DEV_USER_EMAIL")
@@ -78,6 +91,6 @@ def get_current_user() -> Optional[str]:
 
     # If we get here, no user email could be determined
     logger.warning(
-        "Could not determine current user: no IAP header and DEV_USER_EMAIL not set."
+        "Could not determine current user: no IAP header, no Streamlit secrets, and DEV_USER_EMAIL not set."
     )
     return None
