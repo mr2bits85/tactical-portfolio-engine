@@ -1,10 +1,10 @@
 """
-Module to get the current user's email from Cloud Run IAP headers
+Module to get the current user's email and role from Cloud Run IAP headers
 with a fallback to DEV_USER_EMAIL environment variable for local development.
 """
 import os
 import logging
-from typing import Optional
+from typing import Optional, Dict, Any
 
 try:
     import streamlit as st
@@ -16,15 +16,17 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-def get_current_user() -> Optional[str]:
+def get_current_user() -> Optional[Dict[str, Any]]:
     """
-    Get the current user's email from Cloud Run IAP headers.
-    Falls back to the DEV_USER_EMAIL environment variable if the header is not present
+    Get the current user's info from Cloud Run IAP headers.
+    Falls back to the DEV_USER_EMAIL environment variable/secret if the header is not present
     (e.g., during local development).
 
     Returns:
-        The user's email address as a string, or None if not available.
+        A dict with 'email' and 'role' keys, or None if not available.
     """
+    email = None
+
     # Try to get the header from Streamlit request context if available
     if _streamlit_available:
         try:
@@ -43,7 +45,7 @@ def get_current_user() -> Optional[str]:
                         logger.debug(
                             f"Retrieved user email from IAP header: {user_email}"
                         )
-                        return user_email
+                        email = user_email
                     else:
                         logger.warning(
                             "IAP header 'x-goog-authenticated-user-email' is empty."
@@ -63,7 +65,7 @@ def get_current_user() -> Optional[str]:
             )
 
     # Fallback to Streamlit secrets (for local development via .streamlit/secrets.toml)
-    if _streamlit_available and hasattr(st, 'secrets'):
+    if not email and _streamlit_available and hasattr(st, 'secrets'):
         dev_user_email = st.secrets.get("DEV_USER_EMAIL")
         if dev_user_email:
             dev_user_email = dev_user_email.strip()
@@ -71,26 +73,51 @@ def get_current_user() -> Optional[str]:
                 logger.debug(
                     f"Retrieved user email from Streamlit secrets: {dev_user_email}"
                 )
-                return dev_user_email
+                email = dev_user_email
             else:
                 logger.warning("DEV_USER_EMAIL in Streamlit secrets is set but empty.")
 
     # Fallback to environment variable
-    dev_user_email = os.getenv("DEV_USER_EMAIL")
-    if dev_user_email:
-        dev_user_email = dev_user_email.strip()
+    if not email:
+        dev_user_email = os.getenv("DEV_USER_EMAIL")
         if dev_user_email:
-            logger.debug(
-                f"Retrieved user email from DEV_USER_EMAIL environment variable: {dev_user_email}"
-            )
-            return dev_user_email
+            dev_user_email = dev_user_email.strip()
+            if dev_user_email:
+                logger.debug(
+                    f"Retrieved user email from DEV_USER_EMAIL environment variable: {dev_user_email}"
+                )
+                email = dev_user_email
+            else:
+                logger.warning("DEV_USER_EMAIL environment variable is set but empty.")
         else:
-            logger.warning("DEV_USER_EMAIL environment variable is set but empty.")
-    else:
-        logger.debug("DEV_USER_EMAIL environment variable not set.")
+            logger.debug("DEV_USER_EMAIL environment variable not set.")
 
     # If we get here, no user email could be determined
-    logger.warning(
-        "Could not determine current user: no IAP header, no Streamlit secrets, and DEV_USER_EMAIL not set."
-    )
-    return None
+    if not email:
+        logger.warning(
+            "Could not determine current user: no IAP header, no Streamlit secrets, and DEV_USER_EMAIL not set."
+        )
+        return None
+
+    # Now fetch the user's role from the database
+    role = "user"  # default
+    try:
+        from database import SessionLocal
+        from models import Users
+        from sqlalchemy import select
+        
+        session = SessionLocal()
+        try:
+            stmt = select(Users).where(Users.email == email)
+            user = session.execute(stmt).scalar_one_or_none()
+            if user:
+                role = user.role
+                logger.debug(f"Retrieved role '{role}' for user '{email}' from database")
+            else:
+                logger.debug(f"User '{email}' not found in database, defaulting to role='user'")
+        finally:
+            session.close()
+    except Exception as e:
+        logger.warning(f"Failed to fetch user role from database: {e}. Defaulting to 'user'.")
+
+    return {"email": email, "role": role}

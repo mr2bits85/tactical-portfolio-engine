@@ -3,7 +3,7 @@ import urllib.parse
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
-from models import Base
+from models import Base, Users
 
 # Assuming get_secret is imported from a utility file somewhere.
 # If it is in app.py, you may need to move it to a utils.py file or adapt this block.
@@ -57,6 +57,50 @@ def get_database_url():
 # Create engine and session
 engine = create_engine(get_database_url(), pool_pre_ping=True, echo=False)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+def ensure_admin_user():
+    """
+    Ensure the admin user exists with role='admin'.
+    Reads admin email from st.secrets (ADMIN_EMAIL or DEV_USER_EMAIL fallback).
+    Call this during app startup.
+    """
+    if not _streamlit_available or not hasattr(st, 'secrets'):
+        return
+    
+    admin_email = st.secrets.get("ADMIN_EMAIL") or st.secrets.get("DEV_USER_EMAIL")
+    if not admin_email:
+        return
+    
+    admin_email = admin_email.strip().lower()
+    if not admin_email:
+        return
+    
+    from sqlalchemy import select
+    session = SessionLocal()
+    try:
+        stmt = select(Users).where(Users.email == admin_email)
+        user = session.execute(stmt).scalar_one_or_none()
+        
+        if user:
+            if user.role != 'admin':
+                user.role = 'admin'
+                session.commit()
+                print(f"✅ Updated existing user '{admin_email}' to admin role")
+            else:
+                print(f"✅ Admin user '{admin_email}' already has admin role")
+        else:
+            new_user = Users(email=admin_email, role='admin')
+            session.add(new_user)
+            session.commit()
+            print(f"✅ Created new admin user: '{admin_email}'")
+    except Exception as e:
+        session.rollback()
+        print(f"⚠️ Failed to ensure admin user: {e}")
+    finally:
+        session.close()
+
+# Run admin seeding on module import (when app starts)
+ensure_admin_user()
 
 if __name__ == "__main__":
     # This block ONLY runs if you execute database.py directly.

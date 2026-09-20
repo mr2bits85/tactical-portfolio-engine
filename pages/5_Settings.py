@@ -29,7 +29,9 @@ current_user = get_current_user()
 with st.sidebar:
     st.title("Navigation")
     if current_user:
-        st.success(f"Logged in as: {current_user}")
+        st.success(f"Logged in as: {current_user['email']}")
+        if current_user.get('role') == 'admin':
+            st.success("🔑 Admin")
     else:
         st.warning("Running in development mode")
     
@@ -44,14 +46,14 @@ with st.sidebar:
 st.title("⚙️ Settings")
 st.caption("Admin Controls & System Health")
 
-# Admin check (Phase 1 Step 2 will fix this properly)
-is_admin = current_user and current_user == "admin@example.com"
+# Admin check using role from user object
+is_admin = current_user and current_user.get("role") == "admin"
 
 if not is_admin:
     st.warning("🔒 Administrator access required for this page.")
-    st.info("Phase 1 Step 2 will implement proper admin role detection.")
+    st.info("Contact your administrator to request access.")
 else:
-    st.success("✅ Admin access confirmed")
+    st.success("✅ Admin Settings Unlocked")
     
     tab1, tab2 = st.tabs(["🔧 System Settings", "🔄 Symbol Mappings"])
 
