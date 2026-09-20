@@ -1,4 +1,5 @@
 import os
+import urllib.parse
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
@@ -43,7 +44,7 @@ def get_database_url():
         required_keys = ["DB_USER", "DB_PASSWORD", "DB_HOST", "DB_PORT", "DB_NAME"]
         if all(key in st.secrets for key in required_keys):
             user = st.secrets["DB_USER"]
-            password = st.secrets["DB_PASSWORD"]
+            password = urllib.parse.quote_plus(st.secrets["DB_PASSWORD"])
             host = st.secrets["DB_HOST"]
             port = st.secrets["DB_PORT"]
             name = st.secrets["DB_NAME"]
